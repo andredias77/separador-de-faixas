@@ -142,6 +142,7 @@ def separar(arquivo: Path, refazer: bool, tmp: Path | None = None) -> None:
         saida = TMP / pasta
         sep = Separator(model_file_dir=str(MODELOS), output_dir=str(saida), output_format="WAV",
                         use_soundfile=True, normalization_threshold=1.0,
+                        use_directml=True,   # placa AMD/Intel no Windows (só vale se não houver CUDA)
                         mdxc_params={"segment_size": 256, "override_model_segment_size": False,
                                      "batch_size": 1, "overlap": SOBREPOSICAO, "pitch_shift": 0})
         sep.load_model(modelo)

@@ -24,10 +24,10 @@ Feito pensando nos Beatles (a estante tem os 14 discos), mas funciona com qualqu
 ## Instalar
 
 **Requisitos:** Windows 10/11 · Python 3.10+ (recomendado 3.12) · [ffmpeg](https://ffmpeg.org) ·
-placa NVIDIA **opcional** (sem ela funciona pela CPU, bem mais devagar).
+placa de vídeo **opcional**: NVIDIA (CUDA) ou AMD/Intel (DirectML); sem ela funciona pela CPU, bem mais devagar.
 
 O instalador mostra **o que vai baixar e o tamanho, e pede sua confirmação** antes:
-PyTorch com CUDA ~2,5 GB (só CPU: ~200 MB) · bibliotecas ~300 MB · 2 modelos de IA ~1,3 GB.
+PyTorch com CUDA ~2,5 GB (DirectML: ~250 MB; só CPU: ~200 MB) · bibliotecas ~300 MB · 2 modelos de IA ~1,3 GB.
 Tudo fica dentro da pasta do projeto — para desinstalar, apague a pasta.
 
 ### Com um agente de IA
@@ -45,6 +45,7 @@ iniciar.bat              &REM abre a mesa em http://127.0.0.1:8765/mixer.html
 
 ## Quanto demora
 Por música de ~3 min: **~2–7 min com placa NVIDIA** (medido numa GTX 1650 e numa T4) e **dezenas de minutos só com CPU**.
+Com placa AMD ou Intel (DirectML, experimental) fica entre os dois, dependendo da placa.
 Você pode fechar a página durante a separação; o servidor continua e a página mostra o andamento quando você volta.
 
 ## Como funciona a separação
@@ -85,5 +86,5 @@ musicas/  faixas/  modelos/   seus arquivos, as faixas separadas e os modelos (f
 
 **English summary.** Split any song into 6 stems (vocals, guitar, bass, drums, piano, other) with BS-Roformer models
 running locally, and play them in a browser mixing desk with per-stem volume, mute/solo and gapless playback.
-Windows, Python 3.10+, ffmpeg; NVIDIA GPU optional. Open an AI coding agent in this folder and ask it to install —
+Windows, Python 3.10+, ffmpeg; GPU optional (NVIDIA via CUDA, AMD/Intel via DirectML). Open an AI coding agent in this folder and ask it to install —
 see [`AGENTS.md`](AGENTS.md). No music is included. Personal showcase project: no support, issues or PRs; fork freely (MIT).

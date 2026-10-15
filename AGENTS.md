@@ -26,8 +26,9 @@ O projeto **não inclui nenhuma música**: a pessoa usa os próprios arquivos de
 3. python verificar.py            # deve terminar com "Tudo pronto" (código de saída 0)
 4. abra a mesa:                   iniciar.bat   (ou .venv\Scripts\python mixer.py)  → http://127.0.0.1:8765/mixer.html
 ```
-Tamanhos aproximados: PyTorch com CUDA ~2,5 GB (só CPU: ~200 MB), bibliotecas ~300 MB, 2 modelos ~1,3 GB.
-Com placa NVIDIA o instalador escolhe CUDA sozinho; sem placa, instala a versão CPU (funciona, mas é bem mais lenta).
+Tamanhos aproximados: PyTorch com CUDA ~2,5 GB (DirectML ~250 MB; só CPU ~200 MB), bibliotecas ~300 MB, 2 modelos ~1,3 GB.
+O instalador escolhe sozinho: placa NVIDIA → CUDA; placa AMD/Intel no Windows → DirectML (torch 2.4.1 + torch-directml,
+experimental); sem placa → CPU (funciona, mas é bem mais lenta). `separar.py` usa a DirectML só quando não há CUDA.
 
 Requisitos: **Windows 10/11** (o núcleo é Python puro e deve funcionar em Mac/Linux, mas não foi testado lá),
 Python 3.10+ (recomendado 3.12), ffmpeg no PATH.
@@ -37,7 +38,7 @@ Python 3.10+ (recomendado 3.12), ffmpeg no PATH.
   disco certo (se o nome bater com uma faixa dos discos) ou em **All Songs**.
 - **Pasta**: copiar arquivos de áudio para `musicas/` (raiz) também funciona — o servidor percebe e separa sozinho.
 - **Linha de comando**: `.venv\Scripts\python separar.py "nome da música"` separa um arquivo de `musicas/`.
-- Formatos: mp3, wav, flac, m4a, ogg, webm, opus. Tempo por música: ~2–7 min com GPU NVIDIA; dezenas de minutos só com CPU.
+- Formatos: mp3, wav, flac, m4a, ogg, webm, opus. Tempo por música: ~2–7 min com GPU NVIDIA; dezenas de minutos só com CPU; AMD/Intel (DirectML) fica no meio.
 
 ## Mapa do código
 | Arquivo | Papel |
@@ -61,11 +62,12 @@ Dados gerados (fora do git): `musicas/` (áudio da pessoa), `faixas/<música>/*.
 ## Problemas comuns
 - **"ffmpeg não encontrado"**: instale (Windows: `winget install Gyan.FFmpeg`) com a permissão da pessoa e abra um terminal novo.
 - **Há placa NVIDIA mas o verificar diz CPU**: o PyTorch instalado é o de CPU → rode o instalador de novo.
+- **Placa AMD/Intel com erro na separação**: a DirectML é experimental; para forçar a CPU, desinstale `torch-directml` da `.venv`.
 - **Porta 8765 ocupada**: já existe uma mesa aberta; use-a ou feche o processo `mixer.py`.
 - **Engasgos no som / pouca RAM**: separar e ouvir ao mesmo tempo num PC com pouca memória pode engasgar; espere a separação terminar.
 
 ## Opcional: GPU grátis do Google Colab
-Para quem não tem placa NVIDIA. Exige WSL (Ubuntu) com o `colab` CLI e login Google feito **pela própria pessoa**.
+Para quem não tem placa de vídeo. Exige WSL (Ubuntu) com o `colab` CLI e login Google feito **pela própria pessoa**.
 Veja `avaliacao/colab.sh` e `separar.py --colab`. Só a T4 grátis; quando a cota acaba, o Google recusa ("Service Unavailable").
 
 ## Este projeto não aceita contribuições

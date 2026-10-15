@@ -24,6 +24,14 @@ def rodar(cmd, timeout=60):
         return 1, str(e)
 
 
+def placas_amd_intel() -> list[str]:
+    """Placas de vídeo AMD/Intel no Windows (aceleração via DirectML)."""
+    if os.name != "nt":
+        return []
+    cod, saida = rodar(["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_VideoController).Name"])
+    return [l.strip() for l in saida.splitlines() if cod == 0 and any(m in l for m in ("AMD", "Radeon", "Intel"))]
+
+
 def checar() -> list[tuple[str, bool, str]]:
     itens = []
     ok_py = sys.version_info >= (3, 10)
@@ -32,16 +40,19 @@ def checar() -> list[tuple[str, bool, str]]:
                   "instale (Windows: winget install Gyan.FFmpeg; Mac: brew install ffmpeg; Linux: apt install ffmpeg)"))
     cod, saida = rodar(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader"])
     gpu = saida.splitlines()[0] if cod == 0 and saida else ""
-    itens.append(("Placa NVIDIA (opcional)", True, gpu or "não encontrada: a separação roda na CPU, bem mais devagar"))
+    outras = [] if gpu else placas_amd_intel()
+    itens.append(("Placa de vídeo (opcional)", True, gpu or (", ".join(outras) + " (via DirectML)" if outras else
+                                                              "não encontrada: a separação roda na CPU, bem mais devagar")))
     itens.append(("Ambiente .venv", PY_VENV.exists(), str(VENV) if PY_VENV.exists() else "rode o instalador"))
     if PY_VENV.exists():
-        teste = ("import json,torch,soundfile,numpy;import audio_separator;"
-                 "print(json.dumps({'torch':torch.__version__,'cuda':torch.cuda.is_available()}))")
+        teste = ("import json,torch,soundfile,numpy,importlib.util;import audio_separator;"
+                 "dml=importlib.util.find_spec('torch_directml') is not None and __import__('torch_directml').is_available();"
+                 "print(json.dumps({'torch':torch.__version__,'cuda':torch.cuda.is_available(),'dml':dml}))")
         cod, saida = rodar([str(PY_VENV), "-c", teste], timeout=120)
         try:
             info = json.loads(saida.splitlines()[-1])
             itens.append(("Bibliotecas (PyTorch, audio-separator)", True,
-                          f"torch {info['torch']} · {'GPU (CUDA)' if info['cuda'] else 'CPU'}"))
+                          f"torch {info['torch']} · {'GPU (CUDA)' if info['cuda'] else 'GPU (DirectML)' if info['dml'] else 'CPU'}"))
             if gpu and not info["cuda"]:
                 itens.append(("PyTorch com CUDA", False, "há placa NVIDIA, mas o PyTorch instalado é só CPU: rode o instalador de novo"))
         except Exception:
