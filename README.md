@@ -18,7 +18,7 @@ Feito pensando nos Beatles (a estante tem os 14 discos), mas funciona com qualqu
 - **Mesa**: 6 canais + geral, mudo/solo, mixagens prontas ("Voz + baixo", "Só baixo", "Karaokê"…), medidores,
   troca de versão por faixa e **passagem sem lacuna** entre faixas do mesmo disco.
 - **Enviar**: solte um arquivo de áudio; a separação roda no seu PC, com progresso real, e a música entra no disco
-  certo (se o nome bater com uma faixa) ou em **All Songs**. Copiar arquivos para a pasta `musicas/` também funciona.
+  certo (se o nome bater com uma faixa) ou em **All Songs**. Copiar arquivos para a pasta `dados/musicas/` também funciona.
 - **Discos**: os 14 álbuns com todas as faixas; as que você já separou acendem.
 
 ## Instalar
@@ -40,7 +40,7 @@ git clone https://github.com/andredias77/separador-de-faixas.git
 cd separador-de-faixas
 python verificar.py      &REM o que já está pronto e o que falta
 instalar.bat             &REM pergunta antes de baixar; instala tudo dentro da pasta
-iniciar.bat              &REM abre a mesa em http://127.0.0.1:8765/mixer.html
+iniciar.bat              &REM abre a mesa em http://127.0.0.1:8765/
 ```
 
 ## Quanto demora
@@ -65,13 +65,13 @@ mono (como os discos mono dos Beatles). SDR, maior é melhor:
 
 ## Pastas
 ```
-mixer.py · mixer.html    servidor local e a mesa (HTML/JS sem dependências)
-separar.py               separação em 6 faixas (também pela linha de comando)
-catalogo.py · discos.json   discos, faixas e onde cada música separada entra
-verificar.py · instalar.py · *.bat   diagnóstico, instalação e atalhos
-avaliacao/               avaliação (SDR) e otimização que escolheram a técnica
-ferramentas/             infraestrutura pessoal do autor (fila em duas máquinas, Colab) — não é necessária
-musicas/  faixas/  modelos/   seus arquivos, as faixas separadas e os modelos (fora do git)
+instalar.bat · iniciar.bat · instalar.py · verificar.py   instalação, atalhos e diagnóstico
+mesa/          a página (index.html · mesa.css · mesa.js · imagens/), sem dependências
+separador/     servidor.py (servidor local) · separar.py (separação em 6 faixas) · catalogo.py + discos.json (estante)
+avaliacao/     avaliação (SDR) e otimização que escolheram a técnica
+ferramentas/   infraestrutura pessoal do autor (fila em duas máquinas, Colab) — não é necessária
+docs/          imagens deste README
+dados/         fora do git: musicas/ (seus arquivos) · faixas/ (separadas) · modelos/ · registros/
 ```
 
 ## Créditos e direitos

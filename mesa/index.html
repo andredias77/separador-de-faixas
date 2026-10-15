@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Beatles · Mesa de Volumes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="mesa.css">
+</head>
+<body>
+<div class="pagina">
+  <img class="figura esq" id="fig-esq" src="imagens/figuras/web/esquerda-john-paul.png" alt="">
+  <img class="figura dir" id="fig-dir" src="imagens/figuras/web/direita-george.png" alt="">
+  <div class="conteudo">
+
+    <header>
+      <div class="marca">
+        <div class="cap" aria-hidden="true"><span>T</span></div>
+        <div><h1>he Beatles</h1><div class="sc">discoteca · mesa de volumes</div></div>
+      </div>
+      <nav class="abas" aria-label="Páginas">
+        <button class="aba" id="aba-discos">discos</button>
+        <button class="aba" id="aba-mesa"><span>mesa</span><span class="ponto" id="ponto"></span><span class="agora" id="agora"></span></button>
+        <button class="aba" id="aba-enviar">enviar</button>
+      </nav>
+    </header>
+
+    <!-- página 1: discos -->
+    <section id="pg-discos" aria-label="Discos"><div class="estante" id="estante"></div></section>
+
+    <!-- página 3: enviar -->
+    <section id="pg-enviar" class="envio" aria-label="Enviar" hidden>
+      <aside class="envio-lado">
+        <div class="ilustra parada" id="ilustra" aria-hidden="true">
+          <img class="fantasma" src="imagens/envio/travessia.webp" alt="">
+          <img class="revelada" src="imagens/envio/travessia.webp" alt="">
+          <div class="borda"></div>
+        </div>
+        <div class="nota">Os quatro atravessam conforme a canção é separada.</div>
+      </aside>
+      <div class="envio-main">
+        <div id="env-livre">
+          <label class="soltar" id="soltar">
+            <input type="file" id="env-arquivo" accept="audio/*,.flac,.webm,.opus" multiple hidden>
+            <div class="olho-mini"><i></i><div class="olho"><div><div></div></div></div><i></i></div>
+            <div class="grande">Solte aqui uma canção</div>
+            <div class="medio">ou clique para escolher um arquivo de áudio</div>
+            <div class="sc" style="font-size:12px">mp3 · wav · flac · m4a · ogg · webm</div>
+          </label>
+          <p class="envio-texto">A canção é separada nos seis canais da mesa e entra no disco certo, se o nome bater com uma faixa
+            dos discos; senão, vai para <span class="sc" style="color:var(--tinta)">all songs</span>.</p>
+        </div>
+        <div id="env-form" hidden>
+          <div class="sc" style="font-size:12px;letter-spacing:2.5px">nova faixa</div>
+          <input id="env-titulo" placeholder="Nome da canção" aria-label="Nome da canção">
+          <div class="env-info"><span id="env-nome"></span><span>·</span><span id="env-dur">—</span><span>·</span>
+            <span>vai para <span class="vai" id="env-vai">all songs</span></span></div>
+        </div>
+        <div class="botoes-envio" id="env-pronto-para" hidden>
+          <button class="btn-cheio" id="env-separar">separar os instrumentos</button>
+          <button class="link" id="env-trocar">trocar arquivo</button>
+        </div>
+        <div id="env-prog" hidden>
+          <div class="progresso-cab"><span id="env-frase"></span><span id="env-pct">0%</span></div>
+          <div class="barra"><div class="fio-b"></div><div class="los e"></div><div class="los d"></div><div class="cheio" id="env-cheio"></div>
+            <div class="olho" id="env-olho"><div><div></div></div></div></div>
+          <div class="etapas" id="env-etapas"></div>
+          <div id="env-eta"></div>
+          <div class="botoes-envio" id="env-acoes"></div>
+        </div>
+        <p id="env-erro"></p>
+        <div class="fila-envios" id="env-fila" hidden></div>
+      </div>
+    </section>
+
+    <!-- página 2: mesa -->
+    <section id="pg-mesa" class="album" aria-label="Mesa" hidden>
+      <aside class="lado">
+        <div class="moldura-capa"><img id="capa" alt=""></div>
+        <div class="lado-cab">
+          <div><div class="t" id="al-titulo"></div><div class="sc" id="al-info"></div></div>
+          <div style="display:flex;gap:5px">
+            <button class="redondo" id="al-ant" aria-label="Álbum anterior">‹</button>
+            <button class="redondo" id="al-prox" aria-label="Próximo álbum">›</button>
+          </div>
+        </div>
+        <div class="lista-caixa"><div class="lista" id="lista"></div></div>
+      </aside>
+
+      <div class="principal">
+        <div class="transporte">
+          <button class="redondo" id="inicio" disabled title="Voltar ao início (Home)" aria-label="Voltar ao início">⏮</button>
+          <button id="play" disabled title="Tocar / pausar (Espaço)" aria-label="Tocar">▶</button>
+          <button class="redondo" id="proxima" disabled title="Próxima faixa (→)" aria-label="Próxima faixa">⏭</button>
+          <div class="tocando-agora">
+            <div class="titulo-linha">
+              <div class="esq">
+                <div class="cap" aria-hidden="true"><span id="cap-faixa"></span></div>
+                <span id="resto"></span>
+                <span class="sc" id="posicao"></span>
+              </div>
+              <span id="tempo">0:00 / 0:00</span>
+            </div>
+            <div class="onda" id="onda" role="slider" tabindex="0" aria-label="Posição na música" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+          </div>
+        </div>
+
+        <div class="barra-opcoes">
+          <div class="grupo" id="versoes" aria-label="Versão"></div>
+          <div class="grupo" id="atalhos" aria-label="Mixagens prontas"></div>
+        </div>
+
+        <section class="mixer" aria-label="Mesa de volumes">
+          <div class="moldura">
+            <div class="perolas"></div>
+            <div class="canto a"></div><div class="canto b"></div><div class="canto c"></div><div class="canto d"></div>
+            <div class="canais" id="canais"></div>
+          </div>
+        </section>
+
+        <p id="aviso"></p>
+        <footer>
+          <span><kbd>espaço</kbd>toca e pausa</span><span>·</span>
+          <span><kbd>←</kbd><kbd>→</kbd>trocam de faixa</span><span>·</span>
+          <span><kbd>home</kbd>volta ao início</span><span>·</span>
+          <span><kbd>1</kbd>–<kbd>6</kbd>deixam um canal mudo</span><span>·</span>
+          <span><kbd>esc</kbd>vai para discos</span><span>·</span>
+          <span>dois cliques num fader voltam ao volume original</span>
+        </footer>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="mesa.js"></script>
+</body>
+</html>

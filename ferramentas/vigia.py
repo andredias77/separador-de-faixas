@@ -5,7 +5,7 @@ A cada minuto:
   - se o PC passar TRAVA_PC minutos sem nenhum progresso na pasta temporária, mata e recomeça;
   - libera reservas velhas de músicas que não terminaram (trabalhador morreu no meio);
   - se o Colab falhar seguidamente, tenta recriar a sessão T4 grátis (nunca nada pago);
-  - escreve uma linha de situação em vigia.log a cada 10 minutos.
+  - escreve uma linha de situação em dados/registros/vigia.log a cada 10 minutos.
 Sai (o que me avisa) quando: a biblioteca inteira terminar, ou algo se repetir sem solução.
 
 Uso:  .venv\\Scripts\\python ferramentas/vigia.py
@@ -18,11 +18,13 @@ from datetime import datetime
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent   # raiz do projeto
-sys.path.insert(0, str(RAIZ)); sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(RAIZ / "separador")); sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fila
 import separar as S
 
-LOG = RAIZ / "vigia.log"
+REGISTROS = RAIZ / "dados" / "registros"   # logs e sinal de vida
+REGISTROS.mkdir(parents=True, exist_ok=True)
+LOG = REGISTROS / "vigia.log"
 PY = str(RAIZ / ".venv" / "Scripts" / "python.exe")
 COLAB_SH = S.COLAB_SH
 TRAVA_PC = 30 * 60          # s sem mexer em faixas/_tmp_roformer = PC travado
@@ -54,7 +56,7 @@ def matar(padrao: str) -> None:
 
 
 def ligar(onde: str) -> None:
-    saida = open(RAIZ / f"fila_{onde}.log", "a", encoding="utf-8")
+    saida = open(REGISTROS / f"fila_{onde}.log", "a", encoding="utf-8")
     env = dict(os.environ, HF_HUB_DISABLE_SYMLINKS_WARNING="1", PYTHONUNBUFFERED="1")
     subprocess.Popen([PY, str(RAIZ / "ferramentas" / "fila.py"), f"--{onde}"], cwd=RAIZ, stdout=saida, stderr=subprocess.STDOUT, env=env,
                      creationflags=SEM_JANELA | subprocess.CREATE_NEW_PROCESS_GROUP)
@@ -74,7 +76,7 @@ def recriar_colab() -> bool:
                        capture_output=True, creationflags=SEM_JANELA, text=True, timeout=600, env=dict(os.environ, MSYS_NO_PATHCONV="1"))
         colab("instalar", timeout=1200)
         colab("enviar")
-        r = colab("ls", "/content/beatles/separar.py")
+        r = colab("ls", "/content/beatles/separador/separar.py")
         ok = "separar.py" in r.stdout
         log("sessão do Colab recriada" if ok else f"falhou ao recriar o Colab: {r.stdout[-200:]} {r.stderr[-200:]}")
         return ok
@@ -110,10 +112,10 @@ def parar_pc(motivo: str) -> None:
 
 
 def garantir_mesa() -> None:
-    """Mantém o servidor da mesa (mixer.py) no ar."""
-    if not processos("mixer.py"):
-        saida = open(RAIZ / "mixer.log", "a", encoding="utf-8")
-        subprocess.Popen([PY, "mixer.py", "--sem-abrir"], cwd=RAIZ, stdout=saida, stderr=subprocess.STDOUT,
+    """Mantém o servidor da mesa (separador/servidor.py) no ar."""
+    if not processos("servidor.py"):
+        saida = open(REGISTROS / "servidor.log", "a", encoding="utf-8")
+        subprocess.Popen([PY, str(RAIZ / "separador" / "servidor.py"), "--sem-abrir"], cwd=RAIZ, stdout=saida, stderr=subprocess.STDOUT,
                          creationflags=SEM_JANELA | subprocess.CREATE_NEW_PROCESS_GROUP)
         log("liguei o servidor da mesa")
 
@@ -220,7 +222,7 @@ def main() -> None:
                 colab_ativo, colab_desligado_em = False, time.time()
                 log("Colab indisponível (sessão grátis encerrada?); sigo só com o PC e tento de novo em 30 min")
 
-        (RAIZ / "vigia.pulso").write_text(f"{datetime.now():%H:%M:%S}", encoding="utf-8")   # sinal de vida a cada minuto
+        (REGISTROS / "vigia.pulso").write_text(f"{datetime.now():%H:%M:%S}", encoding="utf-8")   # sinal de vida a cada minuto
         if time.time() - ultimo_relatorio > 600:
             reservas = sorted(r.stem for r in fila.RESERVAS.glob("*.txt")
                               if not ((S.FAIXAS / r.stem).exists() and len(list((S.FAIXAS / r.stem).glob("*.flac"))) >= 6))

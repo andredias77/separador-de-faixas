@@ -1,8 +1,8 @@
 """Separa todas as músicas da biblioteca em ordem de álbum, dividindo o trabalho entre o PC e o Colab.
 
 Cada "trabalhador" percorre a lista (o Colab do começo, o PC do fim; Mono Masters por último) e reserva a próxima música livre criando um arquivo em
-faixas/_reservas/ (criação exclusiva: dois trabalhadores nunca pegam a mesma). Músicas já separadas
-(pasta em faixas/ com as 6 faixas) são puladas.
+dados/faixas/_reservas/ (criação exclusiva: dois trabalhadores nunca pegam a mesma). Músicas já separadas
+(pasta em dados/faixas/ com as 6 faixas) são puladas.
 
 Uso:  .venv\\Scripts\\python ferramentas/fila.py --pc        (trabalhador na GPU local)
       .venv\\Scripts\\python ferramentas/fila.py --colab     (trabalhador na T4 grátis do Colab, via WSL)
@@ -14,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))   # raiz do projeto (separar.py)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "separador"))   # separar.py
 import separar as S
 
 # ordem de lançamento (Sgt. Pepper saiu antes de Magical Mystery Tour)

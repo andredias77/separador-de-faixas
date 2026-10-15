@@ -52,7 +52,7 @@ def bruto(modelo: str, tag: str, entradas: dict[str, np.ndarray], overlap: int =
         sep.load_model(modelo)
         t0 = time.time()
         for k, x in falta.items():
-            if (A.RAIZ / "faixas" / "_tmp_roformer").exists():
+            if (A.FAIXAS / "_tmp_roformer").exists():
                 print("[parado] a fila de músicas começou"); sys.exit(2)
             pad = saida / f"{k}.wav"   # completa até 12 s, como no avaliar.py (mesmo segmento da produção)
             sf.write(pad, A.ajustar(x, max(len(x), int(A.DURACAO_MIN * A.SR))), A.SR, subtype="FLOAT")

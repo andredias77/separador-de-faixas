@@ -5,9 +5,9 @@ import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent   # raiz do projeto
-with open(RAIZ / "lote.log", "a", encoding="utf-8") as log:
+with open(RAIZ / "dados" / "registros" / "lote.log", "a", encoding="utf-8") as log:
     for busca in sys.argv[1:]:
         log.write(f"== {busca}\n"); log.flush()
-        subprocess.run([str(RAIZ / ".venv" / "Scripts" / "python.exe"), "separar.py", busca], cwd=RAIZ, stdout=log, stderr=subprocess.STDOUT,
+        subprocess.run([str(RAIZ / ".venv" / "Scripts" / "python.exe"), str(RAIZ / "separador" / "separar.py"), busca], cwd=RAIZ, stdout=log, stderr=subprocess.STDOUT,
                        env=dict(os.environ, HF_HUB_DISABLE_SYMLINKS_WARNING="1"), creationflags=0x08000000)
     log.write("== fim\n")

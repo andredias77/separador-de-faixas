@@ -1,13 +1,13 @@
 """Monta o catálogo da mesa: álbuns em ordem, faixas de cada álbum e as versões já separadas de cada faixa.
 
-- Álbuns com pasta em musicas/ usam as faixas reais da pasta (ordem de lado/faixa, duração do arquivo).
+- Álbuns com pasta em dados/musicas/ usam as faixas reais da pasta (ordem de lado/faixa, duração do arquivo).
 - Álbuns que ainda não temos (Yellow Submarine, Abbey Road, Let It Be) usam a lista de referência abaixo.
-- Cada pasta em faixas/ vira uma "versão" da faixa de onde veio: a versão mono do álbum, " - nova"
+- Cada pasta em dados/faixas/ vira uma "versão" da faixa de onde veio: a versão mono do álbum, " - nova"
   (técnica F), as avulsas (Something, Come Together...) encaixadas pelo título no álbum certo.
 - "All Songs" reúne todas as músicas já separadas, de todos os álbuns, em ordem alfabética
   (avulsas sem álbum conhecido, como My Sweet Lord, ficam só lá).
 
-O servidor da mesa (mixer.py) chama gerar() a cada pedido de /catalogo.json, então músicas recém-separadas
+O servidor da mesa (servidor.py) chama gerar() a cada pedido de /catalogo.json, então músicas recém-separadas
 aparecem sem reiniciar nada.
 """
 import json
@@ -17,13 +17,13 @@ from pathlib import Path
 
 import soundfile as sf
 
-RAIZ = Path(__file__).parent
-MUSICAS = RAIZ / "musicas"
-FAIXAS = RAIZ / "faixas"
+AQUI = Path(__file__).resolve().parent
+MUSICAS = AQUI.parent / "dados" / "musicas"
+FAIXAS = AQUI.parent / "dados" / "faixas"
 EXT = {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".webm", ".opus"}
 STEMS = ["vocals", "guitar", "bass", "drums", "piano", "other"]
 # faixas de cada disco (títulos e durações): a estante fica completa mesmo sem nenhuma pasta em musicas/
-DISCOS = json.loads((RAIZ / "discos.json").read_text(encoding="utf-8")) if (RAIZ / "discos.json").exists() else {}
+DISCOS = json.loads((AQUI / "discos.json").read_text(encoding="utf-8")) if (AQUI / "discos.json").exists() else {}
 
 # (título exibido, ano, capa, trecho do nome da pasta em musicas/ ou None, faixas de referência se não houver pasta)
 ALBUNS = [

@@ -20,8 +20,8 @@ executar() {   # executar SEGUNDOS  (código python vem pela entrada padrão)
 
 case "${1:-}" in
   enviar)
-    echo "import os; os.makedirs('$REMOTO/avaliacao', exist_ok=True)" | executar 60
-    for f in separar.py avaliacao/avaliar.py avaliacao/otimizar.py; do
+    echo "import os; os.makedirs('$REMOTO/avaliacao', exist_ok=True); os.makedirs('$REMOTO/separador', exist_ok=True)" | executar 60
+    for f in separador/separar.py avaliacao/avaliar.py avaliacao/otimizar.py; do
       "$COLAB" upload -s "$S" "$f" "$REMOTO/$f"
     done ;;
   instalar)
@@ -49,22 +49,22 @@ EOF
     done ;;
   separar)     # separar "REL/arquivo.flac" "TITULO": envia a música, separa na T4 e traz as faixas
     REL="$2"; TITULO="$3"; ROT="${4:-}"
-    timeout 180 "$COLAB" upload -s "$S" separar.py "$REMOTO/separar.py" >/dev/null
-    echo "import os; os.makedirs(os.path.dirname('''$REMOTO/musicas/$REL'''), exist_ok=True)" | executar 60 >/dev/null   # ''' aguenta o apóstrofo de "Don't"
-    timeout 300 "$COLAB" upload -s "$S" "musicas/$REL" "$REMOTO/musicas/$REL" >/dev/null
+    timeout 180 "$COLAB" upload -s "$S" separador/separar.py "$REMOTO/separador/separar.py" >/dev/null
+    echo "import os; os.makedirs(os.path.dirname('''$REMOTO/dados/musicas/$REL'''), exist_ok=True)" | executar 60 >/dev/null   # ''' aguenta o apóstrofo de "Don't"
+    timeout 300 "$COLAB" upload -s "$S" "dados/musicas/$REL" "$REMOTO/dados/musicas/$REL" >/dev/null
     executar 780 <<EOF
 import subprocess, os
 env = dict(os.environ, PYTHONUNBUFFERED='1', HF_HUB_DISABLE_SYMLINKS_WARNING='1')
 busca = os.path.splitext(os.path.basename('''$REL'''))[0]
 rot = '''$ROT'''
-r = subprocess.run(['python', 'separar.py', busca, '--exato', '--refazer'] + (['--rotulo', rot] if rot else []), capture_output=True, text=True, cwd='$REMOTO', env=env)
+r = subprocess.run(['python', 'separador/separar.py', busca, '--exato', '--refazer'] + (['--rotulo', rot] if rot else []), capture_output=True, text=True, cwd='$REMOTO', env=env)
 print('\n'.join(l for l in (r.stdout + r.stderr).splitlines() if l.startswith(('[', '  ')) or 'Error' in l))
 EOF
-    mkdir -p "faixas/$TITULO"
+    mkdir -p "dados/faixas/$TITULO"
     for st in vocals guitar bass drums piano other; do
-      timeout 300 "$COLAB" download -s "$S" "$REMOTO/faixas/$TITULO/$st.flac" "faixas/$TITULO/$st.flac" >/dev/null
+      timeout 300 "$COLAB" download -s "$S" "$REMOTO/dados/faixas/$TITULO/$st.flac" "dados/faixas/$TITULO/$st.flac" >/dev/null
     done
-    ls "faixas/$TITULO" ;;
+    ls "dados/faixas/$TITULO" ;;
   ls)   # ls CAMINHO_REMOTO
     "$COLAB" ls -s "$S" "$2" ;;
   trazer)

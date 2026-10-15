@@ -1,11 +1,11 @@
-"""Separa as músicas da pasta musicas/ em 6 faixas (técnica F: voz = média da voz do BS-Roformer-SW
+"""Separa as músicas da pasta dados/musicas/ em 6 faixas (técnica F: voz = média da voz do BS-Roformer-SW
 e do BS-Roformer Viperx; depois o SW separa o resto a partir do instrumental)
 (voz, bateria, baixo, guitarra, piano, outros).
 
-Uso:  .venv\\Scripts\\python separar.py                  (pula músicas já separadas)
-      .venv\\Scripts\\python separar.py --refazer        (separa tudo de novo)
-      .venv\\Scripts\\python separar.py --so "Something"  (só as músicas cujo nome contém o texto)
-Resultado: faixas/<música>/*.flac (24 bits) + faixas/index.json (lido pelo mixer)
+Uso:  .venv\\Scripts\\python separador\\separar.py "Something"   (só as músicas cujo nome contém o texto)
+      .venv\\Scripts\\python separador\\separar.py --todas       (todas; pula as já separadas)
+      (--refazer separa de novo)
+Resultado: dados/faixas/<música>/*.flac (24 bits) + dados/faixas/index.json
 """
 import json
 import re
@@ -18,10 +18,11 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-RAIZ = Path(__file__).parent
-MUSICAS = RAIZ / "musicas"
-FAIXAS = RAIZ / "faixas"
-MODELOS = RAIZ / "modelos"
+RAIZ = Path(__file__).resolve().parent.parent   # raiz do projeto
+DADOS = RAIZ / "dados"                          # tudo que é gerado ou baixado (fora do git)
+MUSICAS = DADOS / "musicas"
+FAIXAS = DADOS / "faixas"
+MODELOS = DADOS / "modelos"
 TMP = FAIXAS / "_tmp_roformer"
 MODELO = "BS-Roformer-SW.ckpt"                 # 6 faixas, usado no instrumental
 MODELO_VOZ = "model_bs_roformer_ep_317_sdr_12.9755.ckpt"   # voz (BS-Roformer Viperx 1297), em média com a voz do SW
@@ -210,8 +211,8 @@ if __name__ == "__main__":
     if "--progresso" in sys.argv:   # usado pelo servidor da mesa (aba enviar)
         PROGRESSO = Path(sys.argv[sys.argv.index("--progresso") + 1])
     tmp_proprio = FAIXAS / sys.argv[sys.argv.index("--tmp") + 1] if "--tmp" in sys.argv else None
-    MUSICAS.mkdir(exist_ok=True)
-    FAIXAS.mkdir(exist_ok=True)
+    MUSICAS.mkdir(parents=True, exist_ok=True)
+    FAIXAS.mkdir(parents=True, exist_ok=True)
     if "--todas" in sys.argv:
         arquivos = sorted(f for f in MUSICAS.rglob("*") if f.suffix.lower() in EXTENSOES)
     elif args and "--exato" in sys.argv:   # nome do arquivo sem extensão (usado pelo modo --colab)

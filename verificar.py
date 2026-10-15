@@ -58,7 +58,7 @@ def checar() -> list[tuple[str, bool, str]]:
         except Exception:
             itens.append(("Bibliotecas (PyTorch, audio-separator)", False, "faltando ou quebradas: rode o instalador"))
     for nome, mb in MODELOS.items():
-        f = RAIZ / "modelos" / nome
+        f = RAIZ / "dados" / "modelos" / nome
         itens.append((f"Modelo {nome}", f.exists() and f.stat().st_size > mb * 0.9e6,
                       f"{f.stat().st_size / 1e6:.0f} MB" if f.exists() else f"falta (~{mb} MB; o instalador baixa)"))
     return itens
@@ -73,4 +73,4 @@ if __name__ == "__main__":
     if falta:
         print("\nFalta: " + ", ".join(falta) + ".\nPróximo passo: rode  instalar.bat  (Windows)  ou  python instalar.py")
         sys.exit(1)
-    print("\nTudo pronto. Abra a mesa com  iniciar.bat  (ou  .venv/Scripts/python mixer.py)")
+    print("\nTudo pronto. Abra a mesa com  iniciar.bat  (ou  .venv/Scripts/python separador/servidor.py)")

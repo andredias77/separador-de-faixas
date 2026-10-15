@@ -1,14 +1,12 @@
-# áudio (direitos autorais: nunca vai para o repositório)
-musicas/
-faixas/
+# dados/: áudio (direitos autorais: nunca vai para o repositório), faixas separadas, modelos e registros
+dados/
 *.mp3
 *.flac
 *.wav
 *.webm
 *.m4a
 
-# modelos baixados (GB) e dataset de avaliação (MUSDB18: uso não comercial, não redistribuir)
-modelos/
+# dataset de avaliação (MUSDB18: uso não comercial, não redistribuir)
 avaliacao/dados/
 avaliacao/cache/
 avaliacao/cache_bruto/
@@ -19,10 +17,9 @@ avaliacao/_tmp/
 __pycache__/
 *.pyc
 *.log
-vigia.pulso
 .claude/
 
 # imagens originais em alta resolução (a página usa as versões leves em */web/)
-imagens/capas/*.png
-imagens/figuras/*.png
-imagens/envio/*.png
+mesa/imagens/capas/*.png
+mesa/imagens/figuras/*.png
+mesa/imagens/envio/*.png

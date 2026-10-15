@@ -7,8 +7,8 @@ O que pode ser baixado:
   - PyTorch: com CUDA (~2,5 GB) se houver placa NVIDIA; com DirectML (~250 MB) se houver placa AMD ou Intel
     no Windows; senão a versão só CPU (~200 MB)
   - audio-separator e bibliotecas de áudio (~300 MB)
-  - 2 modelos de separação (~1,3 GB) em modelos/
-Tudo fica em .venv/ e modelos/; para desinstalar, apague a pasta do projeto.
+  - 2 modelos de separação (~1,3 GB) em dados/modelos/
+Tudo fica em .venv/ e dados/; para desinstalar, apague a pasta do projeto.
 Python e ffmpeg são do sistema: o instalador só avisa se faltarem.
 """
 import os
@@ -46,9 +46,9 @@ def plano() -> list[tuple[str, str]]:
     o_que, tamanho = DESCRICAO[acelerador()]
     passos.append((f"PyTorch {o_que}", tamanho))
     passos.append(("audio-separator e bibliotecas de áudio", "~300 MB"))
-    falta = [n for n, mb in V.MODELOS.items() if not (RAIZ / "modelos" / n).exists()]
+    falta = [n for n, mb in V.MODELOS.items() if not (RAIZ / "dados" / "modelos" / n).exists()]
     if falta:
-        passos.append((f"{len(falta)} modelo(s) de separação em modelos/", f"~{sum(V.MODELOS[n] for n in falta) / 1000:.1f} GB"))
+        passos.append((f"{len(falta)} modelo(s) de separação em dados/modelos/", f"~{sum(V.MODELOS[n] for n in falta) / 1000:.1f} GB"))
     return passos
 
 
@@ -79,7 +79,7 @@ def main() -> None:
     print("[4/4] modelos de separação (só os que faltam) …")
     baixar = ("from audio_separator.separator import Separator\n"
               f"for m in {list(V.MODELOS)!r}:\n"
-              "    s = Separator(model_file_dir='modelos', log_level=30); s.load_model(m); print('  ok', m)\n")
+              "    s = Separator(model_file_dir='dados/modelos', log_level=30); s.load_model(m); print('  ok', m)\n")
     subprocess.run([str(V.PY_VENV), "-c", baixar], cwd=RAIZ, check=True)
     print("\nPronto. Conferindo:\n")
     os.execv(str(V.PY_VENV), [str(V.PY_VENV), str(RAIZ / "verificar.py")])

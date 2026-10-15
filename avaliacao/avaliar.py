@@ -27,8 +27,8 @@ import soundfile as sf
 
 AQUI = Path(__file__).resolve().parent
 RAIZ = AQUI.parent
-sys.path.insert(0, str(RAIZ))
-from separar import MODELO, MODELO_VOZ, SOBREPOSICAO, MODELOS, SR, FOLGA  # noqa: E402
+sys.path.insert(0, str(RAIZ / "separador"))
+from separar import MODELO, MODELO_VOZ, SOBREPOSICAO, MODELOS, SR, FOLGA, FAIXAS  # noqa: E402
 
 DADOS = AQUI / "dados"
 TMP = AQUI / "_tmp"
@@ -122,7 +122,7 @@ def para_4(faixas: dict) -> dict:
 # ---------------------------------------------------------------- GPU
 
 def gpu_ocupada() -> str | None:
-    if (RAIZ / "faixas" / "_tmp_roformer").exists():
+    if (FAIXAS / "_tmp_roformer").exists():
         return "faixas/_tmp_roformer existe (separar.py rodando)"
     if shutil.which("powershell") is None:   # fora do Windows (ex.: Colab) não há fila de músicas
         return None
@@ -164,7 +164,7 @@ def roformer(modelo: str, entradas: dict[str, Path], pasta: str) -> dict[str, di
     sep.load_model(modelo)
     res = {}
     for k, wav in entradas.items():
-        if (RAIZ / "faixas" / "_tmp_roformer").exists():   # a fila do usuário começou: sai já (cache por bloco)
+        if (FAIXAS / "_tmp_roformer").exists():   # a fila do usuário começou: sai já (cache por bloco)
             print("[parado] GPU ocupada no meio da etapa: faixas/_tmp_roformer apareceu")
             sys.exit(2)
         # Com menos de 10 s o audio-separator troca sozinho o segmento do modelo por um bem menor
