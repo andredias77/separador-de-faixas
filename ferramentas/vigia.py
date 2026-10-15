@@ -8,7 +8,7 @@ A cada minuto:
   - escreve uma linha de situação em vigia.log a cada 10 minutos.
 Sai (o que me avisa) quando: a biblioteca inteira terminar, ou algo se repetir sem solução.
 
-Uso:  .venv\\Scripts\\python vigia.py
+Uso:  .venv\\Scripts\\python ferramentas/vigia.py
 """
 import os
 import subprocess
@@ -17,10 +17,11 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+RAIZ = Path(__file__).resolve().parent.parent   # raiz do projeto
+sys.path.insert(0, str(RAIZ)); sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fila
 import separar as S
 
-RAIZ = Path(__file__).parent
 LOG = RAIZ / "vigia.log"
 PY = str(RAIZ / ".venv" / "Scripts" / "python.exe")
 COLAB_SH = S.COLAB_SH
@@ -55,7 +56,7 @@ def matar(padrao: str) -> None:
 def ligar(onde: str) -> None:
     saida = open(RAIZ / f"fila_{onde}.log", "a", encoding="utf-8")
     env = dict(os.environ, HF_HUB_DISABLE_SYMLINKS_WARNING="1", PYTHONUNBUFFERED="1")
-    subprocess.Popen([PY, "fila.py", f"--{onde}"], cwd=RAIZ, stdout=saida, stderr=subprocess.STDOUT, env=env,
+    subprocess.Popen([PY, str(RAIZ / "ferramentas" / "fila.py"), f"--{onde}"], cwd=RAIZ, stdout=saida, stderr=subprocess.STDOUT, env=env,
                      creationflags=SEM_JANELA | subprocess.CREATE_NEW_PROCESS_GROUP)
     log(f"liguei o trabalhador do {onde.upper()}")
 

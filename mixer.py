@@ -4,6 +4,7 @@
 - Aba "enviar": POST /enviar recebe um arquivo de áudio, salva em musicas/Avulsas/ e põe na fila de envios.
   Um trabalhador separa um envio por vez (a GPU é uma só) e grava o andamento; /envios.json mostra a fila,
   POST /cancelar?id=… cancela. A fila fica em faixas/_envios/ e sobrevive a reinícios do servidor.
+- Pasta vigiada: arquivos de áudio novos em musicas/ (raiz) ou musicas/Avulsas/ entram sozinhos na mesma fila.
 - Enquanto há envio sendo separado existe faixas/_envio_ocupado: o vigia pausa a fila grande do PC (prioridade).
 """
 import functools
@@ -23,12 +24,12 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import catalogo
 
-PORTA = 8765
+PORTA = int(sys.argv[sys.argv.index("--porta") + 1]) if "--porta" in sys.argv else 8765
 RAIZ = Path(__file__).parent
 AVULSAS = RAIZ / "musicas" / "Avulsas"
 ENVIOS = RAIZ / "faixas" / "_envios"
 OCUPADO = RAIZ / "faixas" / "_envio_ocupado"
-PY = str(RAIZ / ".venv" / "Scripts" / "python.exe") if (RAIZ / ".venv").exists() else sys.executable
+PY = sys.executable   # o mesmo Python que roda o servidor (o da .venv)
 EXT_OK = {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".webm", ".opus"}
 MAX_BYTES = 400 * 1024 * 1024
 SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -83,7 +84,13 @@ def novo_envio(titulo: str, nome_original: str, corpo: bytes) -> dict:
     for velho in AVULSAS.glob(f"{glob_escape(titulo)}.*"):   # mesmo nome, outro formato: troca pelo novo arquivo
         if velho.suffix.lower() in EXT_OK and velho.suffix.lower() != ext:
             velho.unlink()
-    (AVULSAS / f"{titulo}{ext}").write_bytes(corpo)
+    with trava:   # grava dentro da trava: a pasta vigiada não pode pegar o arquivo antes de ele entrar na fila
+        (AVULSAS / f"{titulo}{ext}").write_bytes(corpo)
+        return _enfileirar(titulo, nome_original)
+
+
+def _enfileirar(titulo: str, nome_original: str, origem: str = "envio") -> dict:
+    """Põe na fila (chamar com a trava pega)."""
     # já existe uma separação desta música? então esta vira uma versão nova ("envio 2", "envio 3"…)
     base = RAIZ / "faixas" / titulo
     rotulo = ""
@@ -93,14 +100,34 @@ def novo_envio(titulo: str, nome_original: str, corpo: bytes) -> dict:
                 e["titulo"] == titulo and e.get("rotulo") == f"envio {k}" and e["estado"] in ("espera", "separando") for e in envios):
             k += 1
         rotulo = f"envio {k}"
-    e = {"id": uuid.uuid4().hex[:10], "titulo": titulo, "arquivo": nome_original, "rotulo": rotulo,
+    e = {"id": uuid.uuid4().hex[:10], "titulo": titulo, "arquivo": nome_original, "rotulo": rotulo, "origem": origem,
          "pasta": f"{titulo} - {rotulo}" if rotulo else titulo, "destino": destino_de(titulo),
          "estado": "espera", "etapa": "", "total": 0.0, "criado": time.time(), "inicio": None, "fim": None, "erro": ""}
-    with trava:
-        envios.append(e)
-        salvar_fila()
+    envios.append(e)
+    salvar_fila()
     acordar.set()
     return e
+
+
+def vigiar_pasta() -> None:
+    """A cada 15 s: áudio novo em musicas/ (raiz) ou musicas/Avulsas/, ainda não separado e fora da fila, entra na fila.
+    Espera o arquivo parar de crescer (cópia terminada). As pastas de álbum ficam com o separar.py/fila do usuário."""
+    musicas = RAIZ / "musicas"
+    while True:
+        try:
+            for f in [*musicas.glob("*"), *AVULSAS.glob("*")]:
+                if not f.is_file() or f.suffix.lower() not in EXT_OK or time.time() - f.stat().st_mtime < 5:
+                    continue
+                titulo = f.stem
+                if (RAIZ / "faixas" / titulo).exists():
+                    continue
+                with trava:
+                    if any(e["titulo"] == titulo and e["estado"] in ("espera", "separando", "pronta", "erro") for e in envios):
+                        continue
+                    _enfileirar(titulo, f.name, "pasta")
+        except Exception:
+            pass
+        time.sleep(15)
 
 
 def glob_escape(t: str) -> str:
@@ -216,6 +243,7 @@ class Mesa(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     carregar_fila()
     threading.Thread(target=trabalhador, daemon=True).start()
+    threading.Thread(target=vigiar_pasta, daemon=True).start()
     handler = functools.partial(Mesa, directory=str(RAIZ))
     servidor = http.server.ThreadingHTTPServer(("127.0.0.1", PORTA), handler)   # só o próprio computador acessa
     url = f"http://127.0.0.1:{PORTA}/mixer.html"

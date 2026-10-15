@@ -1,7 +1,11 @@
-# PyTorch com CUDA: instale antes, conforme a sua GPU (https://pytorch.org/get-started/locally/), por exemplo:
-#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+# Normalmente você não precisa deste arquivo: o instalador (instalar.bat / python instalar.py) faz tudo e pergunta antes.
+# Instalação manual equivalente, dentro de um ambiente virtual:
+#   1) PyTorch — com placa NVIDIA:  pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+#                só CPU:            pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+#   2) pip install -c restricoes.txt -r requirements.txt   (troque [gpu] por [cpu] se não tiver placa NVIDIA)
 audio-separator[gpu]==0.47.0
-soundfile==0.14.0
+soundfile
 numpy
+audioread
 # só para a avaliação (avaliacao/):
-musdb==0.4.3
+# musdb==0.4.3

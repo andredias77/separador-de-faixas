@@ -1,10 +1,10 @@
-"""Separa várias músicas em sequência, sem janela (lançado fora da sessão). Uso: pythonw lote.py "busca 1" "busca 2" ..."""
+"""Separa várias músicas em sequência, sem janela (lançado fora da sessão). Uso: pythonw ferramentas/lote.py "busca 1" "busca 2" ..."""
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-RAIZ = Path(__file__).parent
+RAIZ = Path(__file__).resolve().parent.parent   # raiz do projeto
 with open(RAIZ / "lote.log", "a", encoding="utf-8") as log:
     for busca in sys.argv[1:]:
         log.write(f"== {busca}\n"); log.flush()

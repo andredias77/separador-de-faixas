@@ -10,6 +10,7 @@
 O servidor da mesa (mixer.py) chama gerar() a cada pedido de /catalogo.json, então músicas recém-separadas
 aparecem sem reiniciar nada.
 """
+import json
 import re
 import unicodedata
 from pathlib import Path
@@ -21,6 +22,8 @@ MUSICAS = RAIZ / "musicas"
 FAIXAS = RAIZ / "faixas"
 EXT = {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".webm", ".opus"}
 STEMS = ["vocals", "guitar", "bass", "drums", "piano", "other"]
+# faixas de cada disco (títulos e durações): a estante fica completa mesmo sem nenhuma pasta em musicas/
+DISCOS = json.loads((RAIZ / "discos.json").read_text(encoding="utf-8")) if (RAIZ / "discos.json").exists() else {}
 
 # (título exibido, ano, capa, trecho do nome da pasta em musicas/ ou None, faixas de referência se não houver pasta)
 ALBUNS = [
@@ -136,8 +139,8 @@ def gerar() -> dict:
             for f in sorted((f for d in dirs for f in d.iterdir() if f.suffix.lower() in EXT), key=ordem_faixa):
                 faixas.append({"titulo": sem_parenteses(titulo_arquivo(f)) if "Mono Masters" not in titulo else titulo_arquivo(f),
                                "duracao": duracao_cache(f), "versoes": versoes_de(f)})
-        else:
-            faixas = [{"titulo": t, "duracao": d, "versoes": []} for t, d in (ref or [])]
+        if not faixas:   # sem a pasta do álbum (ex.: quem acabou de baixar o projeto): lista de referência
+            faixas = [{"titulo": t, "duracao": d, "versoes": []} for t, d in (ref or DISCOS.get(titulo, []))]
         albuns.append({"titulo": titulo, "ano": ano, "capa": f"imagens/capas/web/{capa}.jpg", "faixas": faixas})
 
     sem_album = []

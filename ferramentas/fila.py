@@ -4,15 +4,17 @@ Cada "trabalhador" percorre a lista (o Colab do começo, o PC do fim; Mono Maste
 faixas/_reservas/ (criação exclusiva: dois trabalhadores nunca pegam a mesma). Músicas já separadas
 (pasta em faixas/ com as 6 faixas) são puladas.
 
-Uso:  .venv\\Scripts\\python fila.py --pc        (trabalhador na GPU local)
-      .venv\\Scripts\\python fila.py --colab     (trabalhador na T4 grátis do Colab, via WSL)
-      .venv\\Scripts\\python fila.py --lista     (mostra a ordem e o que falta)
+Uso:  .venv\\Scripts\\python ferramentas/fila.py --pc        (trabalhador na GPU local)
+      .venv\\Scripts\\python ferramentas/fila.py --colab     (trabalhador na T4 grátis do Colab, via WSL)
+      .venv\\Scripts\\python ferramentas/fila.py --lista     (mostra a ordem e o que falta)
 """
 import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))   # raiz do projeto (separar.py)
 import separar as S
 
 # ordem de lançamento (Sgt. Pepper saiu antes de Magical Mystery Tour)
