@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Beatles · Mesa de Volumes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel: #f2ece0; --tinta: #111010; --texto2: #4a4640; --texto-tinta: #bdb5a6;
+    --bege: #ddd0b0;   /* item selecionado */
+    --borda-canal: #6b665d; --ponto-apagado: #2c2a27; --onda-apagada: #c4bcad; --linha: #d9d1c2;
+    --amarelo: oklch(0.84 0.16 92); --vermelho: oklch(0.58 0.19 28); --amarelo-escuro: oklch(0.62 0.13 80);
+    --h-fader: 220px;   /* recalculado pelo script para caber na janela */
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow-x: clip; }
+  body { margin: 0; background: var(--papel); color: var(--tinta); font-family: 'IM Fell English', serif; }
+  button { font-family: inherit; color: inherit; }
+  :focus-visible { outline: 1px dotted var(--tinta); outline-offset: 2px; }
+  .mixer :focus-visible { outline-color: var(--papel); }
+  [hidden] { display: none !important; }
+
+  .pagina { min-height: 100vh; padding: 16px 22px 14px; display: flex; justify-content: center; position: relative; isolation: isolate; }
+  .figura { position: fixed; bottom: 0; width: auto; pointer-events: none; user-select: none; z-index: 0;
+    transition: transform .5s ease, opacity .4s ease; }
+  .figura.esq { left: 0; } .figura.dir { right: 0; }
+  .conteudo { width: 100%; max-width: 1560px; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+
+  /* cabeçalho + abas */
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px 28px; flex-wrap: wrap; border-bottom: 4px double var(--tinta); }
+  .marca { display: flex; align-items: flex-end; gap: 11px; padding-bottom: 11px; }
+  .cap { background: var(--tinta); color: var(--papel); display: flex; align-items: center; justify-content: center; font-style: italic; line-height: 1;
+    position: relative; flex: none; box-shadow: 0 0 0 3px var(--papel), 0 0 0 4px var(--tinta); }
+  .cap span { transform: translateY(8%); }
+  .marca .cap { width: 46px; height: 46px; font-size: 40px; }
+  .marca .cap::after { content: ""; position: absolute; right: -9px; bottom: -9px; width: 11px; height: 11px; border-radius: 50%;
+    background: var(--tinta); box-shadow: 0 0 0 3px var(--papel); }
+  .marca h1 { margin: 0; font-weight: normal; font-size: 34px; font-style: italic; line-height: 1; letter-spacing: -.5px; }
+  .sc { font-family: 'IM Fell English SC', serif; letter-spacing: 2px; color: var(--texto2); }
+  .marca .sc { font-size: 13px; letter-spacing: 3px; white-space: nowrap; margin-top: 5px; }
+  .abas { display: flex; gap: 6px; align-items: flex-end; margin-bottom: -4px; }
+  .aba { padding: 8px 20px 7px; border: 1px solid var(--tinta); border-bottom: none; background: var(--papel); cursor: pointer;
+    font-family: 'IM Fell English SC', serif; font-size: 16px; letter-spacing: 2px; display: flex; align-items: center; gap: 9px; }
+  .aba:hover { box-shadow: inset 0 3px 0 var(--amarelo); }
+  .aba.ativa { background: var(--bege); }
+  .aba .ponto { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1px currentColor; }
+  .aba .ponto.tocando { background: var(--amarelo); }
+  .aba .agora { font-family: 'IM Fell English', serif; font-style: italic; font-size: 14px; letter-spacing: 0; max-width: 200px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* discos */
+  .estante { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 26px 22px; padding-bottom: 12px; }
+  @media (min-width: 901px) {   /* 5 discos por linha, 3 linhas; o tamanho da capa vem da altura da janela */
+    .estante { grid-template-columns: repeat(5, var(--capa, 180px)); justify-content: center; gap: 12px 40px; padding-bottom: 0; }
+  }
+  .disco { background: none; border: none; padding: 0; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: transform .3s ease; min-width: 0; }
+  .disco:hover { transform: translateY(-4px); }
+  .moldura-capa { aspect-ratio: 1; border: 1px solid var(--tinta); outline: 1px solid var(--tinta); outline-offset: 4px; margin: 5px; background: #fff; overflow: hidden; }
+  .moldura-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .disco .linha1 { display: flex; align-items: baseline; gap: 7px; padding: 0 5px; }
+  .disco .num { font-style: italic; font-size: 12px; color: var(--texto2); min-width: 22px; }
+  .disco .nome { font-style: italic; font-size: 16px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .disco .sc { font-size: 10px; padding-left: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (prefers-reduced-motion: reduce) { .disco, .figura { transition: none; } .disco:hover { transform: none; } }
+
+  /* mesa: álbum à esquerda, tocador à direita */
+  .album { display: grid; grid-template-columns: minmax(180px, 215px) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .lado { display: flex; flex-direction: column; gap: 10px; height: var(--h-lado, 600px); position: sticky; top: 12px; }
+  .lado .moldura-capa { width: min(calc(100% - 10px), 19vh); flex: none; }
+  .lado-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .lado-cab .t { font-size: 20px; font-style: italic; line-height: 1.05; text-wrap: balance; }
+  .lado-cab .sc { font-size: 11px; margin-top: 4px; }
+  .redondo { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--tinta); background: var(--papel); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex: none; padding: 0; font-size: 15px; }
+  .redondo:hover:not(:disabled) { background: var(--tinta); color: var(--papel); }
+  .redondo:disabled { opacity: .4; cursor: default; }
+  .lista-caixa { flex: 1; min-height: 0; position: relative; border-top: 1px solid var(--tinta); border-bottom: 1px solid var(--tinta); }
+  .lista { position: absolute; inset: 0 16px 0 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+  .lista::-webkit-scrollbar { display: none; }
+  html { scrollbar-width: none; } html::-webkit-scrollbar { display: none; }
+  /* rolagem decadente, versão sutil: fio fino, losangos pequenos, cápsula estreita com olho de pavão */
+  .trilho-rol { position: absolute; top: 0; bottom: 0; right: 0; width: 14px; cursor: pointer; touch-action: none; user-select: none; }
+  .trilho-rol.pagina-rol { position: fixed; top: 14px; bottom: 14px; right: 3px; z-index: 20; }
+  .trilho-rol .fio { position: absolute; left: 50%; top: 9px; bottom: 9px; width: 1px; background: var(--borda-canal); transform: translateX(-50%); opacity: .55; }
+  .trilho-rol .losango { position: absolute; left: 50%; width: 5px; height: 5px; transform: translateX(-50%) rotate(45deg); background: var(--tinta); }
+  .trilho-rol .losango.cima { top: 2px; } .trilho-rol .losango.baixo { bottom: 2px; }
+  .trilho-rol .capsula { position: absolute; left: 50%; width: 6px; transform: translateX(-50%); background: var(--tinta); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; cursor: grab; transition: width .2s ease, background .2s ease; }
+  .trilho-rol:hover .capsula, .trilho-rol .capsula.arrastando { width: 10px; }
+  .trilho-rol .capsula:hover, .trilho-rol .capsula.arrastando { background: var(--vermelho); }
+  .trilho-rol .capsula.arrastando { cursor: grabbing; }
+  .capsula .olho { width: 6px; height: 6px; border-radius: 50%; background: var(--papel); display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .2s ease; }
+  .trilho-rol:hover .capsula .olho, .capsula.arrastando .olho { opacity: 1; }
+  .capsula .olho > i { width: 2px; height: 2px; border-radius: 50%; background: var(--amarelo); }
+  .faixa { width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 7px; align-items: baseline; padding: 5px 7px;
+    border: none; border-bottom: 1px solid var(--linha); background: transparent; text-align: left; cursor: pointer; }
+  .faixa:hover:not(:disabled) { box-shadow: inset 3px 0 0 var(--amarelo); }
+  .faixa .n, .faixa .d { font-size: 11px; color: var(--texto2); font-variant-numeric: tabular-nums; }
+  .faixa .t { font-style: italic; font-size: 16px; line-height: 1.2; }
+  .faixa .v { display: block; font-family: 'IM Fell English SC', serif; font-style: normal; font-size: 10px; letter-spacing: 1px; color: var(--texto2); margin-top: 1px; }
+  .faixa.atual { background: var(--bege); box-shadow: inset 3px 0 0 var(--tinta); }
+  .faixa:disabled { cursor: default; }
+  .faixa:disabled .t { color: #9a9387; }
+
+  .principal { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .transporte { border: 1px solid var(--tinta); outline: 1px solid var(--tinta); outline-offset: 4px; margin: 4px; padding: 7px 12px;
+    display: flex; align-items: center; gap: 10px; }
+  .transporte .redondo { width: 32px; height: 32px; font-size: 12px; }
+  #play { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--tinta); color: var(--papel); font-size: 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 0 0 3px var(--papel), 0 0 0 4px var(--tinta); }
+  #play:disabled { opacity: .4; cursor: default; }
+  .tocando-agora { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; margin-left: 6px; }
+  .titulo-linha { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .titulo-linha .esq { display: flex; align-items: flex-end; gap: 9px; min-width: 0; }
+  .tocando-agora .cap { width: 32px; height: 32px; font-size: 27px; box-shadow: 0 0 0 2px var(--papel), 0 0 0 3px var(--tinta); }
+  #resto { font-size: 24px; font-style: italic; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  #posicao { font-size: 12px; white-space: nowrap; padding-bottom: 2px; }
+  #tempo { font-style: italic; font-size: 17px; white-space: nowrap; flex: none; font-variant-numeric: tabular-nums; padding-bottom: 1px; }
+  .onda { height: 28px; display: flex; align-items: center; gap: 1px; cursor: pointer; position: relative; }
+  .onda i { flex: 1; min-width: 1px; border-radius: 1px; background: var(--onda-apagada); }
+  .onda i.tocada { background: var(--tinta); }
+  .cabeca { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--tinta); left: 0; pointer-events: none; }
+  .cabeca::before { content: ""; position: absolute; top: -5px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--amarelo);
+    border: 1px solid var(--tinta); transform: translateX(-50%); }
+
+  .barra-opcoes { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; }
+  .grupo { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .grupo .sc { font-size: 11px; margin-right: 2px; }
+  .pilula { flex: none; font-style: italic; font-size: 14px; padding: 3px 11px; border: 1px solid var(--tinta); border-radius: 999px; white-space: nowrap;
+    background: transparent; cursor: pointer; }
+  .pilula:hover { border-color: var(--vermelho); }
+  .pilula.ativa { background: var(--bege); }
+  .pilula.versao { font-family: 'IM Fell English SC', serif; font-style: normal; font-size: 12px; letter-spacing: 1px; }
+
+  /* mesa de som */
+  .mixer { background: var(--tinta); padding: 6px; }
+  .moldura { border: 1px solid var(--papel); padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+  .perolas { height: 8px; background-image: radial-gradient(circle, var(--papel) 1.6px, transparent 2px); background-size: 12px 8px; background-position: center; }
+  .canto { position: absolute; width: 11px; height: 11px; border-radius: 50%; background: var(--papel); border: 1px solid var(--tinta); }
+  .canto.a { top: -6px; left: -6px; } .canto.b { top: -6px; right: -6px; } .canto.c { bottom: -6px; left: -6px; } .canto.d { bottom: -6px; right: -6px; }
+  .canais { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+  .canal { border: 1px solid var(--borda-canal); border-radius: 70px 70px 3px 3px; padding: 14px 4px 10px; display: flex; flex-direction: column;
+    align-items: center; gap: 8px; transition: opacity .15s; min-width: 0; }
+  .canal.calado { opacity: .45; }
+  .numeral { font-style: italic; font-size: 12px; color: var(--texto-tinta); }
+  .nome { font-family: 'IM Fell English SC', serif; font-size: 18px; letter-spacing: 1.5px; color: var(--papel);
+    border-top: 1px solid var(--papel); border-bottom: 1px solid var(--papel); padding: 1px 5px; }
+  .ms { display: flex; gap: 6px; height: 24px; }
+  .ms button { width: 32px; height: 24px; border: 1px solid var(--papel); background: transparent; color: var(--papel);
+    font-family: 'IM Fell English SC', serif; font-size: 13px; cursor: pointer; padding: 0; }
+  .ms .m.on { background: var(--vermelho); }
+  .ms .s.on { background: var(--amarelo); color: var(--tinta); }
+  .trilho { display: flex; gap: 16px; align-items: stretch; height: var(--h-fader); margin-top: 3px; }
+  .pontos { display: flex; flex-direction: column-reverse; justify-content: space-between; width: 7px; }
+  .pontos i { width: 7px; height: 7px; border-radius: 50%; background: var(--ponto-apagado); }
+  .fader { width: 46px; height: 100%; position: relative; cursor: ns-resize; touch-action: none; }
+  .fader .linha { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--papel); }
+  .fader .risco { position: absolute; left: 4px; width: 8px; height: 1px; background: var(--texto-tinta); }
+  .fader .risco.cem { left: 0; width: 14px; background: var(--amarelo); }
+  .botao { position: absolute; left: 50%; width: 38px; height: 38px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--papel);
+    box-shadow: 0 0 0 3px var(--tinta), 0 0 0 4px var(--papel); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .botao > div { width: 22px; height: 22px; border-radius: 50%; background: var(--tinta); display: flex; align-items: center; justify-content: center; }
+  .botao > div > div { width: 9px; height: 9px; border-radius: 50%; background: var(--amarelo); }
+  .valor { font-style: italic; font-size: 19px; color: var(--papel); font-variant-numeric: tabular-nums; }
+  .canal.geral { background: var(--papel); border: none; box-shadow: inset 0 0 0 1px var(--tinta), inset 0 0 0 4px var(--papel), inset 0 0 0 5px var(--tinta); }
+  .geral .numeral { color: var(--texto2); }
+  .geral .nome { color: var(--tinta); border-color: var(--tinta); }
+  .geral .pontos i { background: var(--linha); }
+  .geral .fader .linha { background: var(--tinta); }
+  .geral .fader .risco { background: var(--texto2); }
+  .geral .fader .risco.cem { background: var(--vermelho); }
+  .geral .botao { background: var(--tinta); box-shadow: 0 0 0 3px var(--papel), 0 0 0 4px var(--tinta); }
+  .geral .botao > div { background: var(--papel); }
+  .geral .botao > div > div { background: var(--vermelho); }
+  .geral .valor { color: var(--tinta); }
+
+  #aviso { font-style: italic; font-size: 15px; color: var(--texto2); margin: 0; }
+  #aviso:empty { display: none; }
+  footer { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; font-style: italic; font-size: 12px; color: var(--texto2); }
+  footer > span { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  kbd { font-family: 'IM Fell English SC', serif; font-style: normal; border: 1px solid var(--tinta); color: var(--tinta); padding: 0 4px; font-size: 11px; }
+
+  @media (max-height: 800px) and (min-width: 901px) { footer { display: none; } }   /* notebook: o espaço vai para a mesa de som */   /* notebook baixo: atalhos de teclado saem */
+  @media (max-width: 900px) {
+    .album { grid-template-columns: 1fr; }
+    .lado { position: static; height: auto; }
+    .lado .moldura-capa { display: none; }
+    .lista { max-height: 220px; }
+    .canais { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <img class="figura esq" id="fig-esq" src="imagens/figuras/web/esquerda-john-paul.png" alt="">
+  <img class="figura dir" id="fig-dir" src="imagens/figuras/web/direita-george.png" alt="">
+  <div class="conteudo">
+
+    <header>
+      <div class="marca">
+        <div class="cap" aria-hidden="true"><span>T</span></div>
+        <div><h1>he Beatles</h1><div class="sc">discoteca · mesa de volumes</div></div>
+      </div>
+      <nav class="abas" aria-label="Páginas">
+        <button class="aba" id="aba-discos">discos</button>
+        <button class="aba" id="aba-mesa"><span>mesa</span><span class="ponto" id="ponto"></span><span class="agora" id="agora"></span></button>
+      </nav>
+    </header>
+
+    <!-- página 1: discos -->
+    <section id="pg-discos" aria-label="Discos"><div class="estante" id="estante"></div></section>
+
+    <!-- página 2: mesa -->
+    <section id="pg-mesa" class="album" aria-label="Mesa" hidden>
+      <aside class="lado">
+        <div class="moldura-capa"><img id="capa" alt=""></div>
+        <div class="lado-cab">
+          <div><div class="t" id="al-titulo"></div><div class="sc" id="al-info"></div></div>
+          <div style="display:flex;gap:5px">
+            <button class="redondo" id="al-ant" aria-label="Álbum anterior">‹</button>
+            <button class="redondo" id="al-prox" aria-label="Próximo álbum">›</button>
+          </div>
+        </div>
+        <div class="lista-caixa"><div class="lista" id="lista"></div></div>
+      </aside>
+
+      <div class="principal">
+        <div class="transporte">
+          <button class="redondo" id="inicio" disabled title="Voltar ao início (Home)" aria-label="Voltar ao início">⏮</button>
+          <button id="play" disabled title="Tocar / pausar (Espaço)" aria-label="Tocar">▶</button>
+          <button class="redondo" id="proxima" disabled title="Próxima faixa (→)" aria-label="Próxima faixa">⏭</button>
+          <div class="tocando-agora">
+            <div class="titulo-linha">
+              <div class="esq">
+                <div class="cap" aria-hidden="true"><span id="cap-faixa"></span></div>
+                <span id="resto"></span>
+                <span class="sc" id="posicao"></span>
+              </div>
+              <span id="tempo">0:00 / 0:00</span>
+            </div>
+            <div class="onda" id="onda" role="slider" tabindex="0" aria-label="Posição na música" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+          </div>
+        </div>
+
+        <div class="barra-opcoes">
+          <div class="grupo" id="versoes" aria-label="Versão"></div>
+          <div class="grupo" id="atalhos" aria-label="Mixagens prontas"></div>
+        </div>
+
+        <section class="mixer" aria-label="Mesa de volumes">
+          <div class="moldura">
+            <div class="perolas"></div>
+            <div class="canto a"></div><div class="canto b"></div><div class="canto c"></div><div class="canto d"></div>
+            <div class="canais" id="canais"></div>
+          </div>
+        </section>
+
+        <p id="aviso"></p>
+        <footer>
+          <span><kbd>espaço</kbd>toca e pausa</span><span>·</span>
+          <span><kbd>←</kbd><kbd>→</kbd>trocam de faixa</span><span>·</span>
+          <span><kbd>home</kbd>volta ao início</span><span>·</span>
+          <span><kbd>1</kbd>–<kbd>6</kbd>deixam um canal mudo</span><span>·</span>
+          <span><kbd>esc</kbd>vai para discos</span><span>·</span>
+          <span>dois cliques num fader voltam ao volume original</span>
+        </footer>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const MAXV = 150, NDOTS = 22, NBARRAS = 120, GUARDA = "mesa-beatles-v2";
+// canais da mesa, na ordem do design; ids = arquivos gerados pelo separar.py
+const CANAIS = [["vocals", "voz"], ["guitar", "guitarra"], ["bass", "baixo"], ["drums", "bateria"], ["piano", "piano"], ["other", "outros"]];
+const NUM = ["I", "II", "III", "IV", "V", "VI"];
+const ATALHOS = [
+  ["Original", [100, 100, 100, 100, 100, 100]], ["Voz + baixo", [100, 0, 100, 0, 0, 0]], ["Só baixo", [0, 0, 100, 0, 0, 0]],
+  ["Karaokê", [0, 100, 100, 100, 100, 100]], ["Só a voz", [100, 0, 0, 0, 0, 0]], ["Baixo e bateria", [0, 0, 100, 100, 0, 0]],
+  ["Sem guitarra", [100, 0, 100, 100, 100, 100]], ["Guitarra em destaque", [80, 150, 80, 80, 80, 80]],
+];
+const $ = id => document.getElementById(id);
+const romano = n => { let r = ""; for (const [v, s] of [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]) while (n >= v) { r += s; n -= v; } return r; };
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const seg = d => { const [m, s] = (d || "0:00").split(":"); return +m * 60 + +s; };
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- estado (mixagem e posição ficam guardadas no navegador) ---------- */
+const est = { vista: "discos", album: 0, faixa: 0, versao: "", vols: [100, 100, 100, 100, 100, 100], geral: 100,
+              mute: [0, 0, 0, 0, 0, 0], solo: [0, 0, 0, 0, 0, 0] };
+try { Object.assign(est, JSON.parse(localStorage.getItem(GUARDA) || "{}"), { mute: [0, 0, 0, 0, 0, 0], solo: [0, 0, 0, 0, 0, 0] }); } catch {}
+const guardar = () => { try { localStorage.setItem(GUARDA, JSON.stringify({ vista: est.vista, album: est.album, faixa: est.faixa, versao: est.versao, vols: est.vols, geral: est.geral })); } catch {} };
+
+let cat = { albuns: [] };
+let repintarLista = null, repintarPagina = null;   // trilhos de rolagem (montados mais abaixo)
+const albumAtual = () => cat.albuns[est.album] || { titulo: "", ano: "", capa: "", faixas: [] };
+const faixaAtual = () => albumAtual().faixas[est.faixa];
+
+/* ---------- áudio ----------
+   Passagem sem lacuna entre faixas: enquanto uma toca, a próxima do álbum já é baixada e decodificada e
+   fica agendada no relógio do áudio para começar na amostra exata em que a atual termina. O contexto roda
+   em 44,1 kHz (a taxa das faixas), então nada é reamostrado. Os 6 canais da mesa são fixos: cada faixa
+   nova entra neles, e volume/mudo/solo continuam iguais. */
+const ctx = new AudioContext({ sampleRate: 44100, latencyHint: "playback" });
+const ganhoGeral = ctx.createGain();
+// limitador: segura os picos logo abaixo do máximo (volumes acima de 100% não saturam nem chiam)
+const limitador = ctx.createDynamicsCompressor();
+limitador.threshold.value = -1.5; limitador.knee.value = 0; limitador.ratio.value = 20; limitador.attack.value = 0.002; limitador.release.value = 0.15;
+ganhoGeral.connect(limitador); limitador.connect(ctx.destination);
+const anGeral = ctx.createAnalyser(); anGeral.fftSize = 1024; ganhoGeral.connect(anGeral);
+const canal = CANAIS.map(() => {
+  const g = ctx.createGain(), an = ctx.createAnalyser();
+  an.fftSize = 1024; g.connect(an); g.connect(ganhoGeral);
+  return { g, an };
+});
+let faixas = [], tocando = false, inicio = 0, offset = 0, duracao = 0, picos = [], carregada = "", pedido = 0;
+let fontesAtual = [], fontesProx = [];   // fontes de áudio da faixa atual e da próxima (já agendada)
+let prox = null, pedidoProx = 0;         // próxima faixa: { j, pasta, faixas, duracao, agendada }
+const niveis = [0, 0, 0, 0, 0, 0]; let nivelGeral = 0;
+
+async function baixarCanal(pasta, id, i) {
+  const r = await fetch(`faixas/${encodeURIComponent(pasta)}/${id}.flac`);
+  if (!r.ok) return null;
+  return { i, buffer: await ctx.decodeAudioData(await r.arrayBuffer()) };
+}
+async function baixar(pasta, devagar = false) {
+  // a faixa que vai tocar já: tudo em paralelo (mais rápido). A próxima (devagar): um canal por vez,
+  // para não dar pico de CPU/memória enquanto a música toca
+  let fs;
+  if (!devagar) fs = await Promise.all(CANAIS.map(([id], i) => baixarCanal(pasta, id, i)));
+  else { fs = []; for (const [i, [id]] of CANAIS.entries()) fs.push(await baixarCanal(pasta, id, i)); }
+  return { faixas: fs, duracao: Math.max(...fs.filter(Boolean).map(f => f.buffer.duration)) };
+}
+async function carregar(pasta, tocarDepois) {
+  const meu = ++pedido;
+  pedidoProx++; parar(); prox = null; offset = 0; duracao = 0; picos = []; montarOnda();
+  $("play").disabled = $("inicio").disabled = true;
+  $("aviso").textContent = "Carregando as faixas…";
+  try {
+    const r = await baixar(pasta);
+    if (meu !== pedido) return;   // o usuário já trocou de faixa
+    faixas = r.faixas; duracao = r.duracao; carregada = pasta;
+    calcularPicos(); montarOnda(); aplicar(); montarCabecalhoFaixa();
+    $("play").disabled = $("inicio").disabled = false;
+    $("aviso").textContent = "";
+    if (tocarDepois) tocar();
+    prepararProxima();
+  } catch (e) {
+    if (meu === pedido) $("aviso").textContent = "Não consegui carregar as faixas desta versão.";
+  }
+}
+function agendar(fs, quando, desde) {
+  return fs.filter(Boolean).map(f => {
+    const s = ctx.createBufferSource(); s.buffer = f.buffer; s.connect(canal[f.i].g); s.start(quando, desde);
+    return s;
+  });
+}
+function tocar() {
+  if (!duracao) return;
+  ctx.resume();
+  const t = ctx.currentTime + 0.05;   // todos os canais começam no mesmo instante → sincronizados
+  fontesAtual = agendar(faixas, t, offset);
+  inicio = t - offset; tocando = true; marcarPlay();
+  agendarProxima();
+}
+function agendarProxima() {
+  if (!tocando || !prox || !prox.faixas || prox.agendada) return;
+  const fim = inicio + duracao;   // instante exato (no relógio do áudio) em que a atual acaba
+  if (fim - ctx.currentTime < 0.05) return;   // tarde demais para emendar sem corte
+  fontesProx = agendar(prox.faixas, fim, 0);
+  prox.agendada = true;
+}
+function prepararProxima() {
+  const meu = ++pedidoProx;
+  const j = proximaDisponivel(1);
+  if (j < 0) { prox = null; return; }
+  const f = albumAtual().faixas[j];
+  prox = { j, pasta: f.versoes[0].pasta, faixas: null, agendada: false };
+  const espera = Math.max(0, Math.min(8, duracao - agora() - 30)) * 1000;   // deixa a música assentar antes de pré-carregar
+  new Promise(ok => setTimeout(ok, espera)).then(() => meu === pedidoProx ? baixar(prox.pasta, true) : Promise.reject()).then(r => {
+    if (meu !== pedidoProx || !prox) return;
+    prox.faixas = r.faixas; prox.duracao = r.duracao;
+    agendarProxima();
+  }).catch(() => { if (meu === pedidoProx) prox = null; });
+}
+function parar() {
+  if (!tocando) return;
+  offset = Math.min(ctx.currentTime - inicio, duracao);
+  for (const s of [...fontesAtual, ...fontesProx]) { try { s.stop(); } catch {} }
+  fontesAtual = []; fontesProx = [];
+  if (prox) prox.agendada = false;
+  tocando = false; marcarPlay();
+}
+// fim da faixa: se a próxima já estava agendada, ela começou sozinha, sem lacuna — só atualiza a tela
+function verificarFim() {
+  if (!tocando || ctx.currentTime < inicio + duracao) return;
+  if (prox && prox.agendada) {
+    inicio += duracao;
+    faixas = prox.faixas; duracao = prox.duracao; carregada = prox.pasta;
+    est.faixa = prox.j; est.versao = prox.pasta;
+    fontesAtual = fontesProx; fontesProx = []; prox = null;
+    guardar(); calcularPicos(); montarOnda(); montarAlbum();
+    prepararProxima();   // e já começa a preparar a seguinte
+  } else {               // a próxima não chegou a tempo (ou é a última): para e carrega do jeito normal
+    parar(); offset = 0;
+    const j = proximaDisponivel(1);
+    if (j >= 0) escolherFaixa(j, true);
+  }
+}
+setInterval(verificarFim, 100);   // fora do desenho da tela: funciona mesmo com a aba em segundo plano
+function marcarPlay() {
+  $("play").textContent = tocando ? "❚❚" : "▶";
+  $("play").setAttribute("aria-label", tocando ? "Pausar" : "Tocar");
+  $("ponto").classList.toggle("tocando", tocando);
+}
+function irPara(s) { const t = tocando; parar(); offset = Math.max(0, Math.min(s, duracao)); if (t) tocar(); }
+const agora = () => (tocando ? ctx.currentTime - inicio : offset);
+
+/* ---------- forma de onda (nível real da mistura) ---------- */
+function calcularPicos() {
+  const p = new Float32Array(NBARRAS);
+  for (const f of faixas.filter(Boolean)) {
+    const d = f.buffer.getChannelData(0), passo = Math.floor(d.length / NBARRAS);
+    for (let i = 0; i < NBARRAS; i++) { let s = 0, n = 0; for (let j = i * passo; j < (i + 1) * passo; j += 64) { s += d[j] * d[j]; n++; } p[i] += Math.sqrt(s / n); }
+  }
+  const max = Math.max(...p) || 1;
+  picos = Array.from(p, v => Math.max(3, Math.round(4 + 24 * (v / max))));
+}
+let barraAnterior = -1;
+function montarOnda() {
+  const hs = picos.length ? picos : Array(NBARRAS).fill(3);
+  $("onda").innerHTML = hs.map(h => `<i style="height:${h}px"></i>`).join("") + `<div class="cabeca" id="cabeca"></div>`;
+  barraAnterior = -1;
+}
+$("onda").addEventListener("click", e => { const r = e.currentTarget.getBoundingClientRect(); irPara((e.clientX - r.left) / r.width * duracao); });
+$("onda").addEventListener("keydown", e => { const d = { ArrowRight: 5, ArrowLeft: -5 }[e.key]; if (d) { e.preventDefault(); e.stopPropagation(); irPara(agora() + d); } });
+
+/* ---------- mesa de som ---------- */
+function canalHTML(i) {
+  const geral = i === 6, nome = geral ? "geral" : CANAIS[i][1];
+  const riscos = [0, 33.333, 66.667, 100].map(t => `<div class="risco${t === 33.333 ? " cem" : ""}" style="${t === 100 ? "bottom:0" : `top:${t}%`}"></div>`).join("");
+  return `<div class="canal${geral ? " geral" : ""}" data-i="${i}">
+    <div class="numeral">${geral ? "Ω" : NUM[i]}</div>
+    <div class="nome">${nome}</div>
+    <div class="ms">${geral ? "" : `<button class="m" title="Mudo (${i + 1})" aria-pressed="false">m</button><button class="s" title="Solo" aria-pressed="false">s</button>`}</div>
+    <div class="trilho">
+      <div class="pontos">${"<i></i>".repeat(NDOTS)}</div>
+      <div class="fader" role="slider" tabindex="0" aria-label="Volume: ${nome}" aria-valuemin="0" aria-valuemax="${MAXV}" title="Arraste · duplo clique volta a 100%">
+        <div class="linha"></div>${riscos}<div class="botao"><div><div></div></div></div>
+      </div>
+    </div>
+    <div class="valor">100%</div>
+  </div>`;
+}
+function montarMesa() {
+  $("canais").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(canalHTML).join("");
+  document.querySelectorAll(".canal").forEach(el => {
+    const i = +el.dataset.i, fader = el.querySelector(".fader");
+    fader.addEventListener("pointerdown", e => {
+      e.preventDefault(); fader.focus();
+      const r = fader.getBoundingClientRect();
+      const upd = ev => definir(i, Math.round((1 - (ev.clientY - r.top) / r.height) * MAXV));
+      upd(e);
+      const solta = () => { removeEventListener("pointermove", upd); removeEventListener("pointerup", solta); };
+      addEventListener("pointermove", upd); addEventListener("pointerup", solta);
+    });
+    fader.addEventListener("dblclick", () => definir(i, 100));
+    fader.addEventListener("keydown", e => {
+      const p = { ArrowUp: 5, ArrowRight: 5, ArrowDown: -5, ArrowLeft: -5, PageUp: 25, PageDown: -25 }[e.key];
+      if (p) { e.preventDefault(); e.stopPropagation(); definir(i, valor(i) + p, false); }
+    });
+    if (i < 6) { el.querySelector(".m").onclick = () => alternar("mute", i); el.querySelector(".s").onclick = () => alternar("solo", i); }
+  });
+  $("atalhos").innerHTML = `<span class="sc">mixagem</span>` + ATALHOS.map(([n], k) => `<button class="pilula" data-k="${k}">${n}</button>`).join("");
+  $("atalhos").querySelectorAll("button").forEach(b => b.onclick = () => { est.vols = ATALHOS[+b.dataset.k][1].slice(); est.mute.fill(0); est.solo.fill(0); aplicar(); });
+}
+const valor = i => (i === 6 ? est.geral : est.vols[i]);
+function definir(i, v, imantar = true) {
+  v = Math.max(0, Math.min(MAXV, v));
+  if (imantar && Math.abs(v - 100) <= 3) v = 100;   // gruda em 100%
+  if (i === 6) est.geral = v; else est.vols[i] = v;
+  aplicar();
+}
+function alternar(k, i) { est[k][i] = est[k][i] ? 0 : 1; aplicar(); }
+const audivel = i => !est.mute[i] && (!est.solo.some(Boolean) || est.solo[i]);
+function aplicar() {
+  const t = ctx.currentTime;
+  canal.forEach((c, i) => c.g.gain.setTargetAtTime(audivel(i) ? est.vols[i] / 100 : 0, t, 0.02));
+  ganhoGeral.gain.setTargetAtTime(est.geral / 100, t, 0.02);
+  document.querySelectorAll(".canal").forEach(el => {
+    const i = +el.dataset.i, v = valor(i);
+    el.querySelector(".botao").style.top = ((1 - v / MAXV) * 100).toFixed(2) + "%";
+    el.querySelector(".valor").textContent = v + "%";
+    const fd = el.querySelector(".fader"); fd.setAttribute("aria-valuenow", v); fd.setAttribute("aria-valuetext", v + "%");
+    if (i === 6) return;
+    el.classList.toggle("calado", !audivel(i));
+    for (const [c, k] of [["m", "mute"], ["s", "solo"]]) { const b = el.querySelector("." + c); b.classList.toggle("on", !!est[k][i]); b.setAttribute("aria-pressed", !!est[k][i]); }
+  });
+  const semMS = !est.mute.some(Boolean) && !est.solo.some(Boolean);
+  $("atalhos").querySelectorAll("button").forEach(b => b.classList.toggle("ativa", semMS && ATALHOS[+b.dataset.k][1].every((x, i) => x === est.vols[i])));
+  guardar();
+}
+
+/* ---------- discos (página 1) ---------- */
+function montarEstante() {
+  $("estante").innerHTML = cat.albuns.map((a, i) => {
+    const prontas = a.faixas.filter(f => f.versoes.length).length;
+    return `<button class="disco" data-i="${i}">
+      <div class="moldura-capa"><img src="${a.capa}" alt="${esc(a.titulo)}" loading="lazy"></div>
+      <div class="linha1"><span class="num">${romano(i + 1)}</span><span class="nome">${esc(a.titulo)}</span></div>
+      <div class="sc">${a.ano ? a.ano + " · " : ""}${a.faixas.length} faixas${prontas ? ` · ${prontas} na mesa` : ""}</div>
+    </button>`;
+  }).join("");
+  $("estante").querySelectorAll(".disco").forEach(b => b.onclick = () => abrirAlbum(+b.dataset.i));
+}
+
+/* ---------- álbum + faixas (página 2) ---------- */
+function montarAlbum() {
+  const a = albumAtual();
+  $("capa").src = a.capa; $("capa").alt = a.titulo;
+  $("al-titulo").textContent = a.titulo;
+  const total = a.faixas.reduce((s, f) => s + seg(f.duracao), 0);
+  const prontas = a.faixas.filter(f => f.versoes.length).length;
+  $("al-info").textContent = `${a.ano ? a.ano + " · " : ""}${a.faixas.length} faixas · ${Math.round(total / 60)} min · ${prontas} na mesa`;
+  const n = cat.albuns.length;
+  $("al-ant").title = n ? cat.albuns[(est.album - 1 + n) % n].titulo : "";
+  $("al-prox").title = n ? cat.albuns[(est.album + 1) % n].titulo : "";
+  $("lista").innerHTML = a.faixas.map((f, j) => {
+    const ok = f.versoes.length > 0;
+    return `<button class="faixa${j === est.faixa ? " atual" : ""}" data-j="${j}" ${ok ? "" : 'disabled title="ainda não separada"'}>
+      <span class="n">${String(j + 1).padStart(2, "0")}</span>
+      <span class="t">${esc(f.titulo)}${f.album || f.versoes.length > 1 ? `<span class="v">${[f.album ? esc(f.album) : "", f.versoes.length > 1 ? f.versoes.length + " versões" : ""].filter(Boolean).join(" · ")}</span>` : ""}</span>
+      <span class="d">${f.duracao || ""}</span></button>`;
+  }).join("");
+  $("lista").querySelectorAll(".faixa").forEach(b => b.onclick = () => escolherFaixa(+b.dataset.j, true));
+  const atual = $("lista").querySelector(".atual"); if (atual) atual.scrollIntoView({ block: "nearest" });
+  if (repintarLista) repintarLista();
+  montarCabecalhoFaixa();
+}
+function montarCabecalhoFaixa() {
+  const a = albumAtual(), f = faixaAtual();
+  const nome = f ? f.titulo : "";
+  $("cap-faixa").textContent = nome[0] || ""; $("resto").textContent = nome.slice(1); $("resto").title = nome;
+  $("posicao").textContent = f ? `faixa ${est.faixa + 1} de ${a.faixas.length}` : "";
+  $("agora").textContent = carregada ? nome : "";
+  const vs = f ? f.versoes : [];
+  $("versoes").innerHTML = vs.length ? `<span class="sc">versão</span>` + vs.map(v =>
+    `<button class="pilula versao${v.pasta === est.versao ? " ativa" : ""}" data-p="${esc(v.pasta)}">${esc(v.rotulo)}</button>`).join("") : "";
+  $("versoes").querySelectorAll("button").forEach(b => b.onclick = () => {
+    if (b.dataset.p === est.versao) return;
+    est.versao = b.dataset.p; guardar(); montarCabecalhoFaixa(); carregar(est.versao, tocando);
+  });
+  $("proxima").disabled = proximaDisponivel(1) < 0;
+  if (!vs.length && f) $("aviso").textContent = "Esta faixa ainda não foi separada.";
+}
+function proximaDisponivel(d) {
+  const fs = albumAtual().faixas;
+  for (let j = est.faixa + d; j >= 0 && j < fs.length; j += d) if (fs[j].versoes.length) return j;
+  return -1;
+}
+function escolherFaixa(j, tocarDepois) {
+  const f = albumAtual().faixas[j];
+  if (!f || !f.versoes.length) return;
+  est.faixa = j;
+  if (!f.versoes.some(v => v.pasta === est.versao)) est.versao = f.versoes[0].pasta;   // a versão mais nova vem primeiro
+  guardar(); montarAlbum(); carregar(est.versao, tocarDepois);
+}
+function abrirAlbum(i) {
+  est.album = i; est.faixa = 0; mostrar("mesa");
+  const primeira = albumAtual().faixas.findIndex(f => f.versoes.length);
+  if (primeira >= 0) escolherFaixa(primeira, false);
+  else { pedido++; pedidoProx++; parar(); prox = null; faixas = []; carregada = ""; duracao = 0; picos = []; montarOnda(); montarAlbum(); $("play").disabled = $("inicio").disabled = true; }
+}
+function passo(d) {
+  if (d < 0 && agora() > 3) { irPara(0); return; }
+  const j = proximaDisponivel(d);
+  if (j >= 0) escolherFaixa(j, true);
+}
+function mostrar(v) {
+  est.vista = v; guardar();
+  $("pg-discos").hidden = v !== "discos"; $("pg-mesa").hidden = v !== "mesa";
+  $("aba-discos").classList.toggle("ativa", v === "discos"); $("aba-mesa").classList.toggle("ativa", v === "mesa");
+  scrollTo(0, 0); ajustarAltura();
+}
+
+/* ---------- catálogo dinâmico: músicas recém-separadas aparecem sozinhas ---------- */
+let catTexto = "";
+async function lerCatalogo() {
+  try {
+    const texto = await (await fetch("catalogo.json", { cache: "no-store" })).text();
+    if (texto === catTexto) return;
+    catTexto = texto; cat = JSON.parse(texto);
+    if (est.album >= cat.albuns.length) est.album = 0;
+    montarEstante();
+    const f = faixaAtual();
+    if (f && f.versoes.length && !f.versoes.some(v => v.pasta === est.versao)) est.versao = f.versoes[0].pasta;
+    montarAlbum();
+    // a lista mudou (música nova separada): se a próxima ainda não foi agendada, prepara a certa
+    if (carregada && (!prox || (!prox.agendada && prox.j !== proximaDisponivel(1)))) prepararProxima();
+  } catch { $("aviso").textContent = "Não consegui ler o catálogo (o servidor mixer.py está rodando?)."; }
+}
+
+/* ---------- medidores, relógio, avanço automático ---------- */
+const amostra = new Float32Array(1024);
+function nivel(an) {
+  an.getFloatTimeDomainData(amostra);
+  let s = 0; for (const v of amostra) s += v * v;
+  return Math.max(0, Math.min(1, (20 * Math.log10(Math.sqrt(s / amostra.length) + 1e-6) + 48) / 48));
+}
+function pintar(el, lv, geral) {
+  const acesos = Math.round(lv * NDOTS);
+  if (el._acesos === acesos) return;   // nada mudou: não toca no DOM
+  el._acesos = acesos;
+  el._pontos = el._pontos || [...el.querySelectorAll(".pontos i")];
+  el._pontos.forEach((d, k) => {
+    const on = k < acesos, quente = k >= NDOTS - 3, morno = k >= NDOTS - 8;
+    d.style.background = !on ? "" : quente ? "var(--vermelho)" : morno ? (geral ? "var(--amarelo-escuro)" : "var(--amarelo)") : (geral ? "var(--tinta)" : "var(--papel)");
+  });
+}
+let ultimo = performance.now();
+function quadro(ms) {
+  const queda = Math.pow(0.8, (ms - ultimo) / 80); ultimo = ms;   // ~0,8× a cada 80 ms
+  for (let i = 0; i < 6; i++) niveis[i] = Math.max(tocando && faixas[i] ? nivel(canal[i].an) : 0, niveis[i] * queda);
+  nivelGeral = Math.max(tocando ? nivel(anGeral) : 0, nivelGeral * queda);
+  if (est.vista === "mesa") {
+    document.querySelectorAll(".canal").forEach(el => { const i = +el.dataset.i; pintar(el, i === 6 ? nivelGeral : niveis[i], i === 6); });
+    const pos = duracao ? agora() / duracao : 0;
+    const cab = $("cabeca"); if (cab) cab.style.left = (pos * 100).toFixed(2) + "%";
+    const b = Math.floor(pos * NBARRAS);
+    if (b !== barraAnterior) { $("onda").querySelectorAll("i").forEach((x, k) => x.classList.toggle("tocada", (k + 0.5) / NBARRAS <= pos)); barraAnterior = b; }
+    $("onda").setAttribute("aria-valuenow", Math.round(pos * 100));
+    $("tempo").textContent = `${fmt(agora())} / ${fmt(duracao || seg(faixaAtual()?.duracao))}`;
+  }
+  requestAnimationFrame(quadro);
+}
+
+/* ---------- tamanho: tudo cabe na janela do notebook, sem rolar ---------- */
+function ajustarAltura() {
+  const raiz = document.documentElement;
+  if (innerWidth <= 900) { raiz.style.removeProperty("--h-fader"); raiz.style.removeProperty("--h-lado"); }
+  else {
+    const pag = getComputedStyle(document.querySelector(".pagina"));
+    const pads = parseFloat(pag.paddingTop) + parseFloat(pag.paddingBottom);
+    const cab = document.querySelector("header").getBoundingClientRect().height + 14;
+    raiz.style.setProperty("--h-lado", Math.max(380, innerHeight - pads - cab - 4) + "px");
+    if (est.vista === "mesa") {
+      const atual = document.querySelector(".fader").getBoundingClientRect().height;
+      const ocupado = document.querySelector(".principal").getBoundingClientRect().height + cab + pads;
+      raiz.style.setProperty("--h-fader", Math.max(80, Math.min(320, atual + innerHeight - ocupado - 2)) + "px");
+    }
+  }
+  // estante: 5 colunas × 3 linhas cabendo na janela — começa pelo máximo da largura e mede de verdade
+  if (innerWidth > 900 && est.vista === "discos") {
+    let capa = Math.floor((document.querySelector(".conteudo").getBoundingClientRect().width - 4 * 40) / 5);
+    for (let k = 0; k < 6; k++) {
+      raiz.style.setProperty("--capa", capa + "px");
+      const sobra = raiz.scrollHeight - innerHeight;
+      if (sobra <= 0 || capa <= 90) break;
+      capa = Math.max(90, capa - Math.ceil(sobra / 3) - 1);   // (título em 1 linha: a altura do texto é fixa)   // 3 linhas dividem o excesso
+    }
+  }
+  if (repintarPagina) { repintarPagina(); repintarLista(); }   // trilhos medem de novo depois do ajuste
+  // figuras só nas margens laterais, nunca por baixo do conteúdo
+  const larg = document.querySelector(".conteudo").getBoundingClientRect().width;
+  const h = Math.min(innerHeight * 0.94, 980), w = h * 0.342, margem = (innerWidth - larg) / 2 - 16;
+  const visivel = Math.max(0, Math.min(w, margem)), mostra = visivel >= 70, esconde = mostra ? w - visivel : w + 20;
+  for (const [id, sinal] of [["fig-esq", -1], ["fig-dir", 1]]) {
+    const im = $(id); im.style.height = Math.round(h) + "px"; im.style.transform = `translateX(${sinal * Math.round(esconde)}px)`; im.style.opacity = mostra ? 1 : 0;
+  }
+}
+addEventListener("resize", ajustarAltura);
+
+/* ---------- teclado e botões ---------- */
+$("aba-discos").onclick = () => mostrar("discos");
+$("aba-mesa").onclick = () => mostrar("mesa");
+$("play").onclick = () => (tocando ? parar() : tocar());
+$("inicio").onclick = () => irPara(0);
+$("proxima").onclick = () => passo(1);
+$("al-ant").onclick = () => abrirAlbum((est.album - 1 + cat.albuns.length) % cat.albuns.length);
+$("al-prox").onclick = () => abrirAlbum((est.album + 1) % cat.albuns.length);
+addEventListener("keydown", e => {
+  if (/SELECT|INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key === "Escape") { mostrar("discos"); return; }
+  if (est.vista !== "mesa") return;
+  if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); if (!$("play").disabled) $("play").click(); }
+  else if (e.key === "Home") { e.preventDefault(); irPara(0); }
+  else if (e.key === "ArrowRight" && !e.target.closest(".fader, .onda")) passo(1);
+  else if (e.key === "ArrowLeft" && !e.target.closest(".fader, .onda")) passo(-1);
+  else if (/^[1-6]$/.test(e.key)) alternar("mute", +e.key - 1);
+});
+
+/* ---------- rolagem decadente (lista de faixas e, se precisar, a página) ---------- */
+function rolagemDecadente(alvo, ondeMontar, daPagina) {
+  const INSET = 10, MIN = 30;
+  const trilho = document.createElement("div");
+  trilho.className = "trilho-rol" + (daPagina ? " pagina-rol" : "");
+  trilho.setAttribute("role", "scrollbar"); trilho.setAttribute("aria-orientation", "vertical"); trilho.title = "Rolar";
+  trilho.innerHTML = `<div class="fio"></div><div class="losango cima"></div><div class="losango baixo"></div>
+    <div class="capsula"><div class="olho"><i></i></div></div>`;
+  ondeMontar.appendChild(trilho);
+  const cap = trilho.querySelector(".capsula");
+  const vis = () => (daPagina ? innerHeight : alvo.clientHeight);
+  const topo = () => (daPagina ? (document.scrollingElement || document.documentElement).scrollTop : alvo.scrollTop);
+  const rolar = (y, suave) => (daPagina ? window : alvo).scrollTo({ top: y, behavior: suave ? "smooth" : "auto" });
+  const total = () => (daPagina ? (document.scrollingElement || document.documentElement).scrollHeight : alvo.scrollHeight);
+  function geo() {
+    const vh = vis(), sh = total(), range = trilho.clientHeight - INSET * 2, max = Math.max(1, sh - vh);
+    const th = Math.max(MIN, Math.round(range * vh / sh)), room = Math.max(0, range - th);
+    return { mostra: sh > vh + 4, th, room, max, top: Math.round(INSET + room * Math.min(1, topo() / max)), pct: Math.round(100 * Math.min(1, topo() / max)) };
+  }
+  let raf = 0;
+  const pintar = () => { raf = 0; const g = geo(); trilho.style.display = g.mostra ? "" : "none"; cap.style.height = g.th + "px"; cap.style.top = g.top + "px"; trilho.setAttribute("aria-valuenow", g.pct); };
+  const agendar = () => { if (!raf) raf = requestAnimationFrame(pintar); };
+  cap.addEventListener("pointerdown", e => {
+    e.stopPropagation(); e.preventDefault();
+    const g = geo(), y0 = e.clientY, t0 = topo();
+    cap.classList.add("arrastando");
+    const mv = ev => rolar(t0 + (ev.clientY - y0) * g.max / Math.max(1, g.room));
+    const up = () => { cap.classList.remove("arrastando"); removeEventListener("pointermove", mv); removeEventListener("pointerup", up); };
+    addEventListener("pointermove", mv); addEventListener("pointerup", up);
+  });
+  trilho.addEventListener("pointerdown", e => {   // clique no fio: centraliza a cápsula ali
+    const g = geo(), r = trilho.getBoundingClientRect();
+    rolar(Math.max(0, Math.min(1, (e.clientY - r.top - INSET - g.th / 2) / Math.max(1, g.room))) * g.max, true);
+  });
+  (daPagina ? window : alvo).addEventListener("scroll", agendar, { passive: true });
+  addEventListener("resize", agendar);
+  new ResizeObserver(agendar).observe(daPagina ? document.body : alvo);
+  new ResizeObserver(agendar).observe(trilho);   // o próprio trilho também muda de altura
+  new MutationObserver(agendar).observe(alvo === document.body ? document.body : alvo, { childList: true });
+  pintar();
+  return agendar;
+}
+repintarLista = rolagemDecadente($("lista"), $("lista").parentElement, false);
+repintarPagina = rolagemDecadente(document.body, document.body, true);
+
+/* ---------- início ---------- */
+montarMesa(); aplicar(); montarOnda();
+(async () => {
+  await lerCatalogo();
+  mostrar(est.vista === "mesa" ? "mesa" : "discos");
+  const f = faixaAtual();
+  if (f && f.versoes.length) carregar(est.versao, false);
+  document.fonts.ready.then(ajustarAltura);
+  setInterval(lerCatalogo, 20000);
+})();
+requestAnimationFrame(quadro);
+</script>
+</body>
+</html>
