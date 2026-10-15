@@ -23,3 +23,5 @@ __pycache__/
 mesa/imagens/capas/*.png
 mesa/imagens/figuras/*.png
 mesa/imagens/envio/*.png
+avaliacao/rodada.*
+avaliacao/resultados.csv

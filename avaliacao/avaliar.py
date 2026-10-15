@@ -12,7 +12,7 @@ Métrica: SDR global por faixa (nSDR do desafio MDX) e vazamento do baixo (ver v
 Uso:  .venv\\Scripts\\python avaliacao\\avaliar.py                (todas as faixas, pula o que já está no cache)
       .venv\\Scripts\\python avaliacao\\avaliar.py --faixas 1     (só as N primeiras)
       .venv\\Scripts\\python avaliacao\\avaliar.py --so-relatorio (não usa a GPU; só recalcula CSV e relatório)
-Resultado: avaliacao/resultados.csv + avaliacao/RELATORIO.md
+Resultado: avaliacao/rodada.csv + avaliacao/rodada.md (fora do git; o resumo publicado é o RELATORIO.md)
 """
 import csv
 import json
@@ -400,18 +400,18 @@ def relatorio(linhas: list[dict], n_faixas: int) -> str:
 
 
 def gravar(linhas: list[dict], n_faixas: int) -> None:
-    with open(AQUI / "resultados.csv", "w", newline="", encoding="utf-8") as fp:
+    with open(AQUI / "rodada.csv", "w", newline="", encoding="utf-8") as fp:
         w = csv.DictWriter(fp, fieldnames=list(linhas[0].keys()))
         w.writeheader()
         w.writerows(linhas)
     texto = relatorio(linhas, n_faixas)
     # a recomendação é escrita à mão, depois de ler os números; preserva o que já existir
-    rel = AQUI / "RELATORIO.md"
+    rel = AQUI / "rodada.md"
     marca = "## Recomendação"
     if rel.exists() and marca in rel.read_text(encoding="utf-8"):
         texto += "\n" + marca + rel.read_text(encoding="utf-8").split(marca, 1)[1]
     rel.write_text(texto, encoding="utf-8")
-    print(f"[ok] {len(linhas)} linhas em resultados.csv; RELATORIO.md atualizado")
+    print(f"[ok] {len(linhas)} linhas em rodada.csv; rodada.md atualizado")
 
 
 if __name__ == "__main__":

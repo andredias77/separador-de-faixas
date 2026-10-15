@@ -1,56 +1,48 @@
-# Avaliação da separação de faixas (MUSDB18 amostra)
+# Avaliação da separação de faixas
 
-Gerado por `avaliacao/avaliar.py`. 1 trechos de ~7 s da divisão *test*, cada um em duas condições: **estéreo** (original) e **mono** ((L+R)/2 duplicado, como o vinil mono). SDR = nSDR do desafio MDX (`10·log10(Σs²/Σ(s−ŝ)²)`, trecho inteiro), em dB, maior é melhor. Guitarra + piano + outros das saídas de 6 faixas foram somados em *other*. Stems de referência mais de 40 dB abaixo da mistura foram ignorados (n = trechos válidos).
+Como a técnica usada pelo `separador/separar.py` foi escolhida. Foco em **voz** e **baixo**.
 
-## Voz e baixo (mediana do SDR, dB)
+## Como foi medido
+- **Dados:** os 50 trechos de ~7 s da divisão *test* do [MUSDB18](https://sigsep.github.io/datasets/musdb.html) de amostra,
+  que tem as faixas originais separadas (gabarito). O áudio do dataset não está no repositório.
+- **Mono:** cada trecho foi convertido para mono ((L+R)/2 duplicado), como os discos mono dos Beatles.
+- **SDR** (dB, maior é melhor): `10·log10(Σs² / Σ(s−ŝ)²)` no trecho inteiro, como no desafio MDX. Os números são a **mediana** dos 50 trechos.
+- **Vazamento do baixo** (menor é melhor): fração da energia do baixo verdadeiro (40–300 Hz) que aparece nas outras faixas.
+- Saídas de 6 faixas foram comparadas com as 4 do MUSDB somando guitarra + piano + outros em *other*.
+- Código: `avaliar.py` (métricas) e `otimizar.py` (receitas, com cache das saídas de cada modelo). Rodado na GPU T4 grátis do Colab.
 
-| técnica | vocals estereo | vocals mono | bass estereo | bass mono |
-|---|---|---|---|---|
-| E (produção) | 13.19 (n=1) | 13.14 (n=1) | 3.34 (n=1) | 3.71 (n=1) |
-| SW direto | 13.72 (n=1) | 13.82 (n=1) | 3.29 (n=1) | 3.69 (n=1) |
-| Demucs ft | 11.11 (n=1) | 11.82 (n=1) | 3.37 (n=1) | 2.93 (n=1) |
-| E + baixo médio | 13.19 (n=1) | 13.14 (n=1) | 3.75 (n=1) | 3.85 (n=1) |
+## Resultado (50 trechos, mono)
 
-## Bateria e outros (mediana do SDR, dB)
+| Técnica | Voz | Baixo | Vazamento do baixo |
+|---|---|---|---|
+| E — voz do MelBand Kim; o SW separa o resto (versão anterior) | 10,9 dB | 9,1 dB | 8,5% |
+| SW direto na mistura | 11,8 dB | 8,9 dB | 8,4% |
+| Voz do BS-Roformer Viperx; o SW separa o resto | 12,2 dB | 9,3 dB | 8,1% |
+| **F — voz = média(SW, Viperx); o SW separa o resto (atual)** | **12,3 dB** | **9,3 dB** | **7,8%** |
+| F + terceiro modelo de voz (BS Gabox) na média | 12,4 dB | 9,3 dB | 8,1% |
 
-| técnica | drums estereo | drums mono | other estereo | other mono |
-|---|---|---|---|---|
-| E (produção) | 11.87 (n=1) | 11.22 (n=1) | 0.41 (n=1) | 0.33 (n=1) |
-| SW direto | 11.91 (n=1) | 11.36 (n=1) | 0.41 (n=1) | 0.32 (n=1) |
-| Demucs ft | 7.33 (n=1) | 6.12 (n=1) | 0.95 (n=1) | 0.64 (n=1) |
-| E + baixo médio | 11.87 (n=1) | 11.22 (n=1) | 0.75 (n=1) | 0.45 (n=1) |
+A técnica F ficou com o menor vazamento do baixo e praticamente empatada na voz com a variante de 3 modelos,
+que é mais lenta. Por isso ela é a atual: **+1,4 dB na voz** e **menos baixo vazando** que a versão anterior.
 
-## Vazamento do baixo (mediana)
+## Triagem de modelos de voz (15 trechos, mono)
 
-Fração da energia do baixo verdadeiro em 40–300 Hz que aparece em cada faixa estimada: projeção do erro da faixa no baixo, `<b, ŝ_k − s_k>/<b, b>`, tudo filtrado em 40–300 Hz (com separação perfeita dá 0; projetar o erro desconta o que guitarra ou bumbo verdadeiros já têm de parecido com o baixo). *vazamento* = soma nas faixas que não são o baixo; menor é melhor. *capturado* perto de 1 é o ideal.
+Antes da rodada final, cada modelo de voz foi testado sozinho (a voz dele, e o SW separando o resto):
 
-| técnica | condição | capturado | vazamento | → voz | → bateria | → other (guit./piano/outros) |
-|---|---|---|---|---|---|---|
-| E (produção) | estereo | 92.5% | 7.3% | 0.0% | 1.6% | 5.7% |
-| E (produção) | mono | 89.7% | 9.7% | -0.0% | 4.0% | 5.8% |
-| SW direto | estereo | 92.5% | 7.3% | 0.1% | 1.5% | 5.7% |
-| SW direto | mono | 90.3% | 9.1% | 0.1% | 3.3% | 5.8% |
-| Demucs ft | estereo | 75.2% | 24.5% | 0.1% | 11.4% | 13.0% |
-| Demucs ft | mono | 73.1% | 21.1% | 0.1% | 14.3% | 6.7% |
-| E + baixo médio | estereo | 85.3% | 14.4% | 0.0% | 1.6% | 12.8% |
-| E + baixo médio | mono | 81.7% | 17.8% | -0.0% | 4.0% | 13.8% |
+| Modelo de voz | Voz (mediana) |
+|---|---|
+| BS-Roformer Gabox | 12,4 dB |
+| BS-Roformer Viperx 1297 | 12,4 dB |
+| Média Viperx 1297 + 1296 | 12,4 dB |
+| BS-Roformer Viperx 1296 | 12,3 dB |
+| BS-Roformer revive 3e (unwa) | 12,2 dB |
+| MelBand Roformer Kim bleedless (unwa) | 12,0 dB |
+| MelBand Roformer FV7b | 11,5 dB |
+| MelBand Roformer Kim FT (unwa) | 11,5 dB |
+| MelBand Roformer becruily | 11,4 dB |
 
-## Vitórias trecho a trecho (mono)
+Os BS-Roformer ficaram à frente dos MelBand na voz. No baixo, as tentativas de pós-processamento (média de passadas,
+tirar a bateria antes, mais sobreposição) mudaram ~0,1 dB ou menos: o modelo SW já está perto do limite.
 
-Em quantos trechos cada técnica teve o maior SDR.
-
-| stem | E (produção) | SW direto | Demucs ft | E + baixo médio |
-|---|---|---|---|---|
-| vocals | 0 | 1 | 0 | 0 |
-| bass | 0 | 0 | 0 | 1 |
-
-## Tempo de GPU
-
-| etapa | itens | segundos |
-|---|---|---|
-| E: Kim (voz) | 2 | 26 |
-| E: SW (instrumental) | 2 | 19 |
-| SW direto | 2 | 18 |
-| Demucs ft (mistura) | 2 | 24 |
-| Demucs ft (instrumental, p/ E+medio) | 2 | 34 |
-| **total** | | **122** |
+## Limites
+- 50 trechos curtos de música pop/rock moderna, não de gravações dos anos 60; a escuta nos discos dos Beatles foi a checagem final.
+- A primeira versão do projeto (Demucs) foi medida só num trecho de teste e ficou bem atrás no baixo.
