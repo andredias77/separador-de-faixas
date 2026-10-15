@@ -1,0 +1,27 @@
+# áudio (direitos autorais: nunca vai para o repositório)
+musicas/
+faixas/
+*.mp3
+*.flac
+*.wav
+*.webm
+*.m4a
+
+# modelos baixados (GB) e dataset de avaliação (MUSDB18: uso não comercial, não redistribuir)
+modelos/
+avaliacao/dados/
+avaliacao/cache/
+avaliacao/cache_bruto/
+avaliacao/_tmp/
+
+# ambiente, cache, logs e estado local
+.venv/
+__pycache__/
+*.pyc
+*.log
+vigia.pulso
+.claude/
+
+# imagens originais em alta resolução (a página usa as versões leves em */web/)
+imagens/capas/*.png
+imagens/figuras/*.png

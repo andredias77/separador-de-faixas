@@ -1,0 +1,7 @@
+# PyTorch com CUDA: instale antes, conforme a sua GPU (https://pytorch.org/get-started/locally/), por exemplo:
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+audio-separator[gpu]==0.47.0
+soundfile==0.14.0
+numpy
+# só para a avaliação (avaliacao/):
+musdb==0.4.3
