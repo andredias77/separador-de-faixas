@@ -176,12 +176,17 @@ def main() -> None:
         elif livre < RAM_VOLTA and pc_pausado_desde:   # já pausado: só volta com folga sustentada
             pc_pausado_desde = time.time()
 
+        # envio pela aba "enviar" da mesa tem prioridade: a fila grande do PC espera ele terminar
+        envio_ocupado = (S.FAIXAS / "_envio_ocupado").exists()
+        if envio_ocupado and processos("fila.py --pc"):
+            parar_pc("envio pela mesa tem prioridade")
+
         # PC
         pc = processos("fila.py --pc")
         pc_liberado = pc_pausado_desde is None or (livre >= RAM_VOLTA and time.time() - pc_pausado_desde > 300)
         if pc_liberado:
             pc_pausado_desde = None
-        if not pc and pc_liberado and not processos("lote.py"):   # um lote avulso (ex.: Wings) usa a GPU: espera ele
+        if not pc and pc_liberado and not envio_ocupado and not processos("lote.py"):   # um lote avulso (ex.: Wings) usa a GPU: espera ele
             ligar("pc")
         else:
             ultimo = progresso_pc()

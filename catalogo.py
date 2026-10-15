@@ -39,16 +39,16 @@ ALBUNS = [
         ("Hey Bulldog", "3:11"), ("It's All Too Much", "6:28"), ("All You Need Is Love", "3:47"),
         ("Pepperland", "2:18"), ("Sea of Time", "3:00"), ("Sea of Holes", "2:17"), ("Sea of Monsters", "3:37"),
         ("March of the Meanies", "2:16"), ("Pepperland Laid Waste", "2:15"), ("Yellow Submarine in Pepperland", "2:13")]),
+    ("Let It Be", 1970, "13-Let-It-Be", None, [
+        ("Two of Us", "3:36"), ("Dig a Pony", "3:54"), ("Across the Universe", "3:48"), ("I Me Mine", "2:25"),
+        ("Dig It", "0:50"), ("Let It Be", "4:03"), ("Maggie Mae", "0:40"), ("I've Got a Feeling", "3:37"),
+        ("One After 909", "2:54"), ("The Long and Winding Road", "3:38"), ("For You Blue", "2:32"), ("Get Back", "3:09")]),
     ("Abbey Road", 1969, "12-Abbey-Road", "Abbey Road", [   # pasta 1969 - Abbey Road (2019 Mix); a lista abaixo é só reserva
         ("Come Together", "4:20"), ("Something", "3:03"), ("Maxwell's Silver Hammer", "3:27"), ("Oh! Darling", "3:26"),
         ("Octopus's Garden", "2:51"), ("I Want You (She's So Heavy)", "7:47"), ("Here Comes the Sun", "3:05"),
         ("Because", "2:45"), ("You Never Give Me Your Money", "4:02"), ("Sun King", "2:26"), ("Mean Mr. Mustard", "1:06"),
         ("Polythene Pam", "1:12"), ("She Came In Through the Bathroom Window", "1:57"), ("Golden Slumbers", "1:31"),
         ("Carry That Weight", "1:36"), ("The End", "2:05"), ("Her Majesty", "0:23")]),
-    ("Let It Be", 1970, "13-Let-It-Be", None, [
-        ("Two of Us", "3:36"), ("Dig a Pony", "3:54"), ("Across the Universe", "3:48"), ("I Me Mine", "2:25"),
-        ("Dig It", "0:50"), ("Let It Be", "4:03"), ("Maggie Mae", "0:40"), ("I've Got a Feeling", "3:37"),
-        ("One After 909", "2:54"), ("The Long and Winding Road", "3:38"), ("For You Blue", "2:32"), ("Get Back", "3:09")]),
     ("Mono Masters", 2009, "14-Mono-Masters", "Mono Masters", None),
     ("All Songs", "", "16-All-Songs", None, []),
 ]

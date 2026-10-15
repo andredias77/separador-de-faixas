@@ -25,3 +25,4 @@ vigia.pulso
 # imagens originais em alta resolução (a página usa as versões leves em */web/)
 imagens/capas/*.png
 imagens/figuras/*.png
+imagens/envio/*.png

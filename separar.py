@@ -32,12 +32,43 @@ EXTENSOES = {".mp3", ".flac", ".wav", ".m4a", ".aac", ".ogg", ".webm", ".opus"}
 
 FOLGA = 0.5  # entrada a -6 dB: nenhuma faixa chega ao limite em que o audio-separator reescalaria só ela
 
+# progresso para a aba "enviar" da mesa: etapas reais e o peso de cada uma no total
+ETAPAS = [("preparo", 0.05), ("voz", 0.30), ("voz2", 0.30), ("instrumentos", 0.30), ("acabamento", 0.05)]
+PROGRESSO = None   # caminho do JSON de progresso (--progresso); None = não escreve
 
-def preparar_entrada(arquivo: Path) -> Path:
+
+def avisar(etapa: str, frac: float = 0.0) -> None:
+    """Escreve {etapa, frac, total} no JSON de progresso (total = 0..1 somando os pesos das etapas)."""
+    if PROGRESSO is None:
+        return
+    feito = 0.0
+    for nome, peso in ETAPAS:
+        if nome == etapa:
+            feito += peso * max(0.0, min(1.0, frac))
+            break
+        feito += peso
+    tmp = Path(str(PROGRESSO) + ".tmp")
+    tmp.write_text(json.dumps({"etapa": etapa, "frac": round(frac, 4), "total": round(feito, 4)}), encoding="utf-8")
+    tmp.replace(PROGRESSO)   # troca atômica: quem lê nunca pega o arquivo pela metade
+
+
+def contar_progresso(etapa: str) -> None:
+    """Faz o contador interno (tqdm) do audio-separator avisar o progresso da etapa."""
+    from audio_separator.separator.architectures import mdxc_separator as m
+    def tqdm_com_aviso(iteravel, *a, **k):
+        itens = list(iteravel)
+        for i, x in enumerate(itens):
+            avisar(etapa, i / max(1, len(itens)))
+            yield x
+        avisar(etapa, 1.0)
+    m.tqdm = tqdm_com_aviso
+
+
+def preparar_entrada(arquivo: Path, tmp: Path = TMP) -> Path:
     """Converte para WAV float32, 44,1 kHz, estéreo (mono vira estéreo duplicado), sem a capa, com pico em FOLGA."""
-    wav = TMP / f"{arquivo.stem}.wav"
+    wav = tmp / f"{arquivo.stem}.wav"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(arquivo), "-vn", "-ar", str(SR), "-ac", "2",
-                    "-c:a", "pcm_f32le", str(wav)], check=True)
+                    "-c:a", "pcm_f32le", str(wav)], check=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     dados, _ = sf.read(wav, dtype="float32", always_2d=True)
     ganho = FOLGA / float(np.abs(dados).max())
     sf.write(wav, dados * ganho, SR, subtype="FLOAT")
@@ -90,8 +121,10 @@ def liberar(sep=None) -> None:
         pass
 
 
-def separar(arquivo: Path, refazer: bool) -> None:
+def separar(arquivo: Path, refazer: bool, tmp: Path | None = None) -> None:
+    """tmp: pasta temporária desta separação (cada trabalho usa a sua, para dois nunca se atrapalharem)."""
     from audio_separator.separator import Separator
+    TMP = tmp or globals()["TMP"]
 
     destino = FAIXAS / titulo(arquivo)
     if not refazer and destino.exists() and any(destino.glob("*.flac")):
@@ -99,10 +132,13 @@ def separar(arquivo: Path, refazer: bool) -> None:
         return
     print(f"[separando] {arquivo.name} ...", flush=True)
     TMP.mkdir(parents=True, exist_ok=True)
-    wav, ganho = preparar_entrada(arquivo)
+    avisar("preparo", 0.0)
+    wav, ganho = preparar_entrada(arquivo, TMP)
     mistura, _ = sf.read(wav, dtype="float32", always_2d=True)
 
-    def rodar(modelo: str, entrada: Path, pasta: str) -> dict:
+    def rodar(modelo: str, entrada: Path, pasta: str, etapa: str) -> dict:
+        contar_progresso(etapa)
+        avisar(etapa, 0.0)
         saida = TMP / pasta
         sep = Separator(model_file_dir=str(MODELOS), output_dir=str(saida), output_format="WAV",
                         use_soundfile=True, normalization_threshold=1.0,
@@ -121,19 +157,20 @@ def separar(arquivo: Path, refazer: bool) -> None:
     # 1) voz = média(voz do SW, voz do Viperx)  2) SW separa o resto a partir do instrumental (mistura − voz)
     #    (avaliacao/: +1,4 dB na voz e menos vazamento do baixo que a versão anterior, em 50 trechos mono)
     print("  [1/3] voz (SW)...", flush=True)
-    voz_sw = rodar(MODELO, wav, "voz_sw")["vocals"][: len(mistura)]
+    voz_sw = rodar(MODELO, wav, "voz_sw", "voz")["vocals"][: len(mistura)]
     print("  [2/3] voz (Viperx)...", flush=True)
-    voz_vx = rodar(MODELO_VOZ, wav, "voz_vx")["vocals"][: len(mistura)]
+    voz_vx = rodar(MODELO_VOZ, wav, "voz_vx", "voz2")["vocals"][: len(mistura)]
     n_voz = min(len(voz_sw), len(voz_vx))
     voz = (voz_sw[:n_voz] + voz_vx[:n_voz]) / 2
     instr = TMP / "instrumental.wav"
     sf.write(instr, mistura[: len(voz)] - voz, SR, subtype="FLOAT")
     print("  [3/3] baixo, bateria, guitarra, piano, outros...", flush=True)
-    faixas = rodar(MODELO, instr, "resto")
+    faixas = rodar(MODELO, instr, "resto", "instrumentos")
     faixas.pop("vocals", None)   # sobra de voz que o SW ainda achou fica fora (já está na faixa de voz)
     faixas["vocals"] = voz
     n = min(len(a) for a in faixas.values())
 
+    avisar("acabamento", 0.0)
     if destino.exists():
         shutil.rmtree(destino)
     destino.mkdir(parents=True)
@@ -148,6 +185,7 @@ def separar(arquivo: Path, refazer: bool) -> None:
     for nome, dados in faixas.items():
         sf.write(destino / f"{nome}.flac", dados[:n] * ajuste, SR, subtype="PCM_24")
     shutil.rmtree(TMP)
+    avisar("acabamento", 1.0)
     print(f"[ok] {arquivo.name} → {destino}", flush=True)
 
 
@@ -165,8 +203,12 @@ ROTULO = ""
 
 if __name__ == "__main__":
     ROTULO = sys.argv[sys.argv.index("--rotulo") + 1] if "--rotulo" in sys.argv else ""
-    args = [a for a in sys.argv[1:] if not a.startswith("--") and a != ROTULO]
+    args = [a for a in sys.argv[1:] if not a.startswith("--") and a not in {ROTULO}
+            and a not in {sys.argv[i + 1] for i, x in enumerate(sys.argv[:-1]) if x in ("--progresso", "--tmp")}]
     refazer = "--refazer" in sys.argv
+    if "--progresso" in sys.argv:   # usado pelo servidor da mesa (aba enviar)
+        PROGRESSO = Path(sys.argv[sys.argv.index("--progresso") + 1])
+    tmp_proprio = FAIXAS / sys.argv[sys.argv.index("--tmp") + 1] if "--tmp" in sys.argv else None
     MUSICAS.mkdir(exist_ok=True)
     FAIXAS.mkdir(exist_ok=True)
     if "--todas" in sys.argv:
@@ -191,5 +233,5 @@ if __name__ == "__main__":
             subprocess.run(["wsl.exe", "-d", "Ubuntu", "--", "bash", COLAB_SH,
                             "separar", rel, titulo(a), ROTULO], check=True, env=env)
         else:
-            separar(a, refazer)
+            separar(a, refazer, tmp_proprio)
     gerar_indice()

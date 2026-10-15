@@ -184,6 +184,74 @@
   kbd { font-family: 'IM Fell English SC', serif; font-style: normal; border: 1px solid var(--tinta); color: var(--tinta); padding: 0 4px; font-size: 11px; }
 
   @media (max-height: 800px) and (min-width: 901px) { footer { display: none; } }   /* notebook: o espaço vai para a mesa de som */   /* notebook baixo: atalhos de teclado saem */
+  /* aba enviar */
+  .envio { display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-start; padding-top: 6px; }
+  .envio-lado { flex: 0 1 min(330px, 44vh); display: flex; flex-direction: column; gap: 10px; }
+  .ilustra { aspect-ratio: 1; border: 1px solid var(--tinta); outline: 1px solid var(--tinta); outline-offset: 4px; margin: 5px;
+    position: relative; overflow: hidden; background: var(--papel); }
+  .ilustra img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .ilustra .fantasma { opacity: .1; filter: grayscale(1); }
+  .ilustra .revelada { clip-path: inset(0 var(--falta, 100%) 0 0); transition: clip-path .5s linear; }
+  .ilustra .borda { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tinta); left: calc(100% - var(--falta, 100%));
+    transition: left .5s linear; }
+  .ilustra.parada .borda { display: none; }
+  .envio-lado .nota { font-style: italic; font-size: 13px; color: var(--texto2); padding: 0 5px; }
+  .envio-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+  .soltar { border: 1px solid var(--tinta); border-radius: 200px 200px 4px 4px; outline: 1px solid var(--tinta); outline-offset: 5px; margin: 6px;
+    min-height: min(300px, 38vh); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    padding: 40px 24px 30px; cursor: pointer; text-align: center; transition: background .2s ease; }
+  .soltar:hover, .soltar.arrastando { background: #ebe4d6; }
+  .soltar .grande { font-size: 36px; font-style: italic; line-height: 1.05; }
+  .soltar .medio { font-style: italic; font-size: 17px; color: var(--texto2); }
+  .olho-mini { display: flex; gap: 7px; align-items: center; }
+  .olho-mini i { width: 4px; height: 4px; border-radius: 50%; background: var(--tinta); }
+  .olho { width: 22px; height: 22px; border-radius: 50%; background: var(--papel); box-shadow: 0 0 0 2px var(--tinta), 0 0 0 3px var(--papel);
+    display: flex; align-items: center; justify-content: center; flex: none; }
+  .olho > div { width: 12px; height: 12px; border-radius: 50%; background: var(--tinta); display: flex; align-items: center; justify-content: center; }
+  .olho > div > div { width: 4px; height: 4px; border-radius: 50%; background: var(--amarelo); }
+  .envio-texto { font-style: italic; font-size: 15px; color: var(--texto2); max-width: 620px; }
+  #env-titulo { font-family: 'IM Fell English', serif; font-style: italic; font-size: 40px; line-height: 1.1; color: var(--tinta); background: transparent;
+    border: none; border-bottom: 1px solid var(--tinta); padding: 2px 0 6px; outline: none; width: 100%; }
+  #env-titulo:read-only { border-bottom-color: transparent; }
+  .env-info { display: flex; gap: 10px; align-items: center; font-style: italic; font-size: 15px; color: var(--texto2); flex-wrap: wrap; }
+  .env-info .vai { font-family: 'IM Fell English SC', serif; font-style: normal; letter-spacing: 1.5px; color: var(--tinta); }
+  .botoes-envio { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .btn-cheio { font-style: italic; font-size: 17px; padding: 8px 22px; border-radius: 999px; cursor: pointer; white-space: nowrap; border: none;
+    background: var(--tinta); color: var(--papel); box-shadow: 0 0 0 3px var(--papel), 0 0 0 4px var(--tinta); }
+  .btn-cheio:hover { color: var(--amarelo); }
+  .btn-vazio { font-style: italic; font-size: 17px; padding: 8px 22px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    border: 1px solid var(--tinta); background: transparent; }
+  .btn-vazio:hover { border-color: var(--vermelho); }
+  .link { background: none; border: none; padding: 0; font-style: italic; font-size: 15px; color: var(--texto2); border-bottom: 1px solid var(--texto2); cursor: pointer; }
+  .link:hover { color: var(--vermelho); }
+  .progresso-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  #env-frase { font-style: italic; font-size: 20px; }
+  #env-pct { font-style: italic; font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1; }
+  #env-eta { font-style: italic; font-size: 14px; color: var(--texto2); }
+  #env-eta:empty { display: none; }
+  .barra { position: relative; height: 30px; }
+  .barra .fio-b { position: absolute; left: 10px; right: 10px; top: 50%; height: 1px; background: var(--tinta); }
+  .barra .los { position: absolute; top: 50%; width: 8px; height: 8px; transform: translateY(-50%) rotate(45deg); background: var(--tinta);
+    box-shadow: 0 0 0 2px var(--papel), 0 0 0 3px var(--tinta); }
+  .barra .los.e { left: 0; } .barra .los.d { right: 0; }
+  .barra .cheio { position: absolute; left: 10px; top: 50%; height: 8px; transform: translateY(-50%); border-radius: 999px; background-color: var(--tinta);
+    background-image: radial-gradient(circle, var(--papel) 1.1px, transparent 1.5px); background-size: 10px 8px; background-position: 5px center;
+    width: 0; transition: width .5s linear; }
+  .barra .olho { position: absolute; top: 50%; transform: translate(-50%, -50%); left: 10px; transition: left .5s linear; }
+  .etapas { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .etapas span { display: flex; align-items: center; gap: 7px; font-family: 'IM Fell English SC', serif; font-size: 13px; letter-spacing: 1.5px; color: var(--texto2); }
+  .etapas span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px var(--tinta); }
+  .etapas span.feita { color: var(--tinta); } .etapas span.feita::before { background: var(--tinta); }
+  .etapas span.agora { color: var(--tinta); } .etapas span.agora::before { background: var(--amarelo); }
+  .fila-envios { border-top: 1px solid var(--tinta); }
+  .fila-envios .item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline; padding: 6px 4px;
+    border-bottom: 1px solid var(--linha); font-size: 15px; cursor: pointer; }
+  .fila-envios .item .t { font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fila-envios .item .st { font-family: 'IM Fell English SC', serif; font-size: 12px; letter-spacing: 1px; color: var(--texto2); }
+  .fila-envios .item.atual { background: var(--bege); }
+  #env-erro { color: var(--vermelho); font-style: italic; margin: 0; }
+  #env-erro:empty { display: none; }
+  #env-prog:not([hidden]) { display: flex; flex-direction: column; gap: 14px; }
   @media (max-width: 900px) {
     .album { grid-template-columns: 1fr; }
     .lado { position: static; height: auto; }
@@ -207,11 +275,57 @@
       <nav class="abas" aria-label="Páginas">
         <button class="aba" id="aba-discos">discos</button>
         <button class="aba" id="aba-mesa"><span>mesa</span><span class="ponto" id="ponto"></span><span class="agora" id="agora"></span></button>
+        <button class="aba" id="aba-enviar">enviar</button>
       </nav>
     </header>
 
     <!-- página 1: discos -->
     <section id="pg-discos" aria-label="Discos"><div class="estante" id="estante"></div></section>
+
+    <!-- página 3: enviar -->
+    <section id="pg-enviar" class="envio" aria-label="Enviar" hidden>
+      <aside class="envio-lado">
+        <div class="ilustra parada" id="ilustra" aria-hidden="true">
+          <img class="fantasma" src="imagens/envio/travessia.webp" alt="">
+          <img class="revelada" src="imagens/envio/travessia.webp" alt="">
+          <div class="borda"></div>
+        </div>
+        <div class="nota">Os quatro atravessam conforme a canção é separada.</div>
+      </aside>
+      <div class="envio-main">
+        <div id="env-livre">
+          <label class="soltar" id="soltar">
+            <input type="file" id="env-arquivo" accept="audio/*,.flac,.webm,.opus" multiple hidden>
+            <div class="olho-mini"><i></i><div class="olho"><div><div></div></div></div><i></i></div>
+            <div class="grande">Solte aqui uma canção</div>
+            <div class="medio">ou clique para escolher um arquivo de áudio</div>
+            <div class="sc" style="font-size:12px">mp3 · wav · flac · m4a · ogg · webm</div>
+          </label>
+          <p class="envio-texto">A canção é separada nos seis canais da mesa e entra no disco certo, se o nome bater com uma faixa
+            dos discos; senão, vai para <span class="sc" style="color:var(--tinta)">all songs</span>.</p>
+        </div>
+        <div id="env-form" hidden>
+          <div class="sc" style="font-size:12px;letter-spacing:2.5px">nova faixa</div>
+          <input id="env-titulo" placeholder="Nome da canção" aria-label="Nome da canção">
+          <div class="env-info"><span id="env-nome"></span><span>·</span><span id="env-dur">—</span><span>·</span>
+            <span>vai para <span class="vai" id="env-vai">all songs</span></span></div>
+        </div>
+        <div class="botoes-envio" id="env-pronto-para" hidden>
+          <button class="btn-cheio" id="env-separar">separar os instrumentos</button>
+          <button class="link" id="env-trocar">trocar arquivo</button>
+        </div>
+        <div id="env-prog" hidden>
+          <div class="progresso-cab"><span id="env-frase"></span><span id="env-pct">0%</span></div>
+          <div class="barra"><div class="fio-b"></div><div class="los e"></div><div class="los d"></div><div class="cheio" id="env-cheio"></div>
+            <div class="olho" id="env-olho"><div><div></div></div></div></div>
+          <div class="etapas" id="env-etapas"></div>
+          <div id="env-eta"></div>
+          <div class="botoes-envio" id="env-acoes"></div>
+        </div>
+        <p id="env-erro"></p>
+        <div class="fila-envios" id="env-fila" hidden></div>
+      </div>
+    </section>
 
     <!-- página 2: mesa -->
     <section id="pg-mesa" class="album" aria-label="Mesa" hidden>
@@ -581,8 +695,9 @@ function passo(d) {
 }
 function mostrar(v) {
   est.vista = v; guardar();
-  $("pg-discos").hidden = v !== "discos"; $("pg-mesa").hidden = v !== "mesa";
+  $("pg-discos").hidden = v !== "discos"; $("pg-mesa").hidden = v !== "mesa"; $("pg-enviar").hidden = v !== "enviar";
   $("aba-discos").classList.toggle("ativa", v === "discos"); $("aba-mesa").classList.toggle("ativa", v === "mesa");
+  $("aba-enviar").classList.toggle("ativa", v === "enviar");
   scrollTo(0, 0); ajustarAltura();
 }
 
@@ -737,11 +852,143 @@ function rolagemDecadente(alvo, ondeMontar, daPagina) {
 repintarLista = rolagemDecadente($("lista"), $("lista").parentElement, false);
 repintarPagina = rolagemDecadente(document.body, document.body, true);
 
+/* ---------- aba enviar: solta um arquivo, o servidor separa e a música entra na estante ---------- */
+const ETAPAS_ENV = [["envio", "envio", "Enviando o arquivo…"], ["preparo", "preparo", "Preparando o áudio…"],
+  ["voz", "voz", "Separando a voz…"], ["voz2", "voz (2º modelo)", "Conferindo a voz com o segundo modelo…"],
+  ["instrumentos", "instrumentos", "Separando os instrumentos…"], ["acabamento", "acabamento", "Acabamento final…"]];
+const env = { arquivo: null, dur: 0, id: null, envio: 0, lista: [] };
+const simplesJS = t => t.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const semParenteses = t => t.replace(/\s*\((mono|\d{4} (mix|remaster)|original single version)\)/gi, "").trim();
+function destinoJS(titulo) {   // mesmo critério do servidor: disco com faixa de mesmo nome, ou All Songs
+  const alvo = simplesJS(semParenteses(titulo));
+  const al = cat.albuns.slice(0, -1).find(a => a.faixas.some(f => simplesJS(semParenteses(f.titulo)) === alvo));
+  return al ? al.titulo : "All Songs";
+}
+function tituloDoArquivo(nome) {   // "The Beatles - Taxman (Official Audio) [abc].mp3" -> "Taxman"
+  let t = nome.replace(/\.[^.]+$/, "").replace(/\[[^\]]*\]/g, "")
+    .replace(/\((official|audio|lyric|visuali[sz]er|video|hd|hq)[^)]*\)/gi, "").replace(/_/g, " ");
+  if (t.includes(" - ")) t = t.split(" - ").pop();
+  return t.replace(/\s+/g, " ").trim();
+}
+function revelar(frac, andando) {   // os quatro atravessam da esquerda para a direita conforme a separação anda
+  $("ilustra").style.setProperty("--falta", ((1 - frac) * 100).toFixed(1) + "%");
+  $("ilustra").classList.toggle("parada", !andando);
+}
+function escolherArquivos(lista) {
+  const fs = [...lista].filter(Boolean);
+  if (!fs.length) return;
+  $("env-erro").textContent = "";
+  if (fs.length > 1) { fs.forEach(f => subir(f, tituloDoArquivo(f.name))); return; }   // vários: vão direto para a fila
+  const f = fs[0];
+  env.arquivo = f; env.dur = 0; env.id = null; env.envio = 0;
+  const a = new Audio(); a.preload = "metadata";
+  a.onloadedmetadata = () => { env.dur = isFinite(a.duration) ? a.duration : 0; $("env-dur").textContent = env.dur ? fmt(env.dur) : "—"; URL.revokeObjectURL(a.src); };
+  a.src = URL.createObjectURL(f);
+  $("env-titulo").value = tituloDoArquivo(f.name);
+  $("env-nome").textContent = f.name; $("env-dur").textContent = "—";
+  atualizarDestino(); revelar(0, false); desenharEnvio();
+  $("env-titulo").focus();
+}
+function atualizarDestino() { $("env-vai").textContent = destinoJS($("env-titulo").value || "").toLowerCase(); }
+function subir(arquivo, titulo) {   // envia o arquivo ao servidor (o progresso do envio é a primeira etapa)
+  const x = new XMLHttpRequest();
+  x.open("POST", `enviar?titulo=${encodeURIComponent(titulo)}&arquivo=${encodeURIComponent(arquivo.name)}`);
+  const meu = arquivo === env.arquivo;
+  if (meu) { env.envio = 0.001; desenharEnvio(); }
+  x.upload.onprogress = e => { if (meu && e.lengthComputable) { env.envio = Math.max(0.001, e.loaded / e.total); desenharEnvio(); } };
+  x.onload = () => {
+    let r = {}; try { r = JSON.parse(x.responseText); } catch {}
+    if (x.status !== 200) { $("env-erro").textContent = "Não deu para enviar: " + (r.erro || x.status); if (meu) { env.envio = 0; desenharEnvio(); } return; }
+    if (meu) { env.id = r.id; env.envio = 0; }
+    lerEnvios();
+  };
+  x.onerror = () => { $("env-erro").textContent = "Não deu para enviar (o servidor mixer.py está rodando?)."; if (meu) { env.envio = 0; desenharEnvio(); } };
+  x.send(arquivo);
+}
+let jaAbriuCatalogo = new Set();
+async function lerEnvios() {
+  try {
+    env.lista = (await (await fetch("envios.json", { cache: "no-store" })).json()).envios;
+    for (const e of env.lista) if (e.estado === "pronta" && !jaAbriuCatalogo.has(e.id)) { jaAbriuCatalogo.add(e.id); catTexto = ""; lerCatalogo(); }
+    desenharEnvio();
+  } catch {}
+}
+setInterval(() => { if (est.vista === "enviar" || env.lista.some(e => e.estado === "espera" || e.estado === "separando")) lerEnvios(); }, 1000);
+function desenharEnvio() {
+  const e = env.id && env.lista.find(x => x.id === env.id);
+  const temArquivo = !!env.arquivo, enviando = env.envio > 0;
+  $("env-livre").hidden = temArquivo;
+  $("env-form").hidden = !temArquivo;
+  $("env-pronto-para").hidden = !(temArquivo && !enviando && !e);
+  $("env-prog").hidden = !(enviando || e);
+  $("env-titulo").readOnly = !!(enviando || e);
+  if (enviando || e) {
+    let i, frac, frase;
+    if (enviando) { i = 0; frac = 0.02 * env.envio; frase = ETAPAS_ENV[0][2]; }
+    else if (e.estado === "espera") { i = 1; frac = 0.02; frase = "Na fila: começa quando a anterior terminar."; }
+    else if (e.estado === "separando") { i = Math.max(1, ETAPAS_ENV.findIndex(x => x[0] === e.etapa)); frac = 0.02 + 0.98 * e.total; frase = ETAPAS_ENV[i][2]; }
+    else if (e.estado === "pronta") { i = ETAPAS_ENV.length; frac = 1; frase = "Pronta: seis canais separados."; }
+    else { i = -1; frac = e.total || 0; frase = e.estado === "erro" ? "Algo deu errado na separação." : "Cancelada."; }
+    $("env-frase").textContent = frase;
+    $("env-pct").textContent = Math.round(frac * 100) + "%";
+    $("env-cheio").style.width = `calc((100% - 20px) * ${frac.toFixed(4)})`;
+    $("env-olho").style.left = `calc(10px + (100% - 20px) * ${frac.toFixed(4)})`;
+    $("env-etapas").innerHTML = ETAPAS_ENV.map((x, k) => `<span class="${k < i ? "feita" : k === i ? "agora" : ""}">${x[1]}</span>`).join("");
+    revelar(frac, !!(enviando || (e && e.estado === "separando")));
+    let eta = "";
+    if (e && e.estado === "separando" && e.inicio && e.total > 0.03) {
+      const resta = (Date.now() / 1000 - e.inicio) * (1 - e.total) / e.total;
+      eta = resta > 90 ? `faltam cerca de ${Math.round(resta / 60)} min` : "falta menos de 2 min";
+    }
+    $("env-eta").textContent = eta;
+    if (e && e.estado === "erro") $("env-erro").textContent = e.erro || "";
+    $("env-acoes").innerHTML = e && (e.estado === "espera" || e.estado === "separando") ? `<button class="link" id="env-cancelar">cancelar</button>`
+      : e && e.estado === "pronta" ? `<button class="btn-cheio" id="env-abrir">abrir na mesa</button><button class="btn-vazio" id="env-outra">enviar outra</button>`
+      : e ? `<button class="btn-vazio" id="env-outra">enviar outra</button>` : "";
+    const c = $("env-cancelar"); if (c) c.onclick = () => fetch(`cancelar?id=${env.id}`, { method: "POST" }).then(lerEnvios);
+    const o = $("env-outra"); if (o) o.onclick = recomecarEnvio;
+    const ab = $("env-abrir"); if (ab) ab.onclick = () => abrirEnviada(e.pasta);
+  } else revelar(0, false);
+  // fila: outros envios (vários arquivos de uma vez, ou enviados antes)
+  const outros = env.lista.filter(x => x.estado !== "cancelada").slice(-12).reverse();
+  $("env-fila").hidden = !outros.length;
+  const nomes = { espera: "na fila", separando: "separando", pronta: "pronta", erro: "erro" };
+  $("env-fila").innerHTML = outros.map(x => `<div class="item${x.id === env.id ? " atual" : ""}" data-id="${x.id}">
+    <span class="t">${esc(x.titulo)}${x.rotulo ? ` <span class="st">(${esc(x.rotulo)})</span>` : ""}</span>
+    <span class="st">→ ${esc(x.destino.toLowerCase())}</span>
+    <span class="st">${x.estado === "separando" ? Math.round(x.total * 100) + "%" : nomes[x.estado] || x.estado}</span></div>`).join("");
+  $("env-fila").querySelectorAll(".item").forEach(d => d.onclick = () => {   // clicar num item mostra o andamento dele
+    const x = env.lista.find(y => y.id === d.dataset.id); if (!x) return;
+    env.id = x.id; env.arquivo = { name: x.arquivo }; env.envio = 0;
+    $("env-titulo").value = x.titulo; $("env-nome").textContent = x.arquivo; $("env-dur").textContent = "—";
+    $("env-vai").textContent = x.destino.toLowerCase(); desenharEnvio();
+  });
+}
+function recomecarEnvio() {
+  env.arquivo = null; env.id = null; env.envio = 0; $("env-erro").textContent = ""; $("env-arquivo").value = "";
+  desenharEnvio();
+}
+async function abrirEnviada(pasta) {   // abre na mesa a versão recém-separada, no disco em que ela entrou
+  catTexto = ""; await lerCatalogo();
+  for (const [i, a] of cat.albuns.entries()) {
+    const j = a.faixas.findIndex(f => f.versoes.some(v => v.pasta === pasta));
+    if (j >= 0) { est.album = i; mostrar("mesa"); est.versao = pasta; escolherFaixa(j, true); return; }
+  }
+}
+$("env-arquivo").onchange = e => escolherArquivos(e.target.files);
+$("soltar").addEventListener("dragover", e => { e.preventDefault(); $("soltar").classList.add("arrastando"); });
+$("soltar").addEventListener("dragleave", () => $("soltar").classList.remove("arrastando"));
+$("soltar").addEventListener("drop", e => { e.preventDefault(); $("soltar").classList.remove("arrastando"); escolherArquivos(e.dataTransfer.files); });
+$("env-titulo").addEventListener("input", atualizarDestino);
+$("env-separar").onclick = () => { if (env.arquivo) subir(env.arquivo, $("env-titulo").value.trim() || tituloDoArquivo(env.arquivo.name)); };
+$("env-trocar").onclick = () => $("env-arquivo").click();
+$("aba-enviar").onclick = () => { mostrar("enviar"); lerEnvios(); };
+
 /* ---------- início ---------- */
 montarMesa(); aplicar(); montarOnda();
 (async () => {
   await lerCatalogo();
-  mostrar(est.vista === "mesa" ? "mesa" : "discos");
+  mostrar(["mesa", "enviar"].includes(est.vista) ? est.vista : "discos");
   const f = faixaAtual();
   if (f && f.versoes.length) carregar(est.versao, false);
   document.fonts.ready.then(ajustarAltura);
